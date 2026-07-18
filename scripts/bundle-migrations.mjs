@@ -27,4 +27,6 @@ export const MIGRATIONS: Migration[] = ${JSON.stringify(migrations, null, 2)};
 `;
 
 writeFileSync(join(migDir, '..', 'migrations.generated.ts'), out);
-console.log(`Bundled ${migrations.length} migration(s): ${migrations.map((m) => m.tag).join(', ')}`);
+console.log(
+  `Bundled ${migrations.length} migration(s): ${migrations.map((m) => m.tag).join(', ')}`,
+);
