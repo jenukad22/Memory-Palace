@@ -1,3 +1,6 @@
-npx lint-staged
+# Check-only hook: never mutates the working tree (no lint-staged/stash), so a
+# killed commit can't lose uncommitted work. See docs/adr/2026-07-19-precommit-hook.md
+npx prettier --check .
+npm run lint
 npm run typecheck
 npm run test
