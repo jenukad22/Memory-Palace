@@ -1,4 +1,7 @@
-import { fileURLToPath } from 'node:url';
+// Import URL from node:url (not the global) so it stays Node's URL even when a
+// dependency's types pull the DOM lib into the program (e.g. sql.js/expo on the
+// web client). Otherwise the global DOM `URL` mismatches node's fileURLToPath.
+import { fileURLToPath, URL } from 'node:url';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({

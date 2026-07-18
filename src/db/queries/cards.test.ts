@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import type { CardState } from '@/engine';
+import { createEmptyCardState, schedule, type CardState } from '@/engine';
 import { createTestDb } from '../testing';
 import type { Db } from '../types';
 import {
@@ -54,7 +54,7 @@ describe('card queries', () => {
     expect(getFsrsState(db, 'rt')).toEqual(state);
   });
 
-  it('round-trips a CardState with lastReview = null', () => {
+  it('round-trips a CardState with lastReview = null (DB and library boundary)', () => {
     createCard(db, { id: 'rn', module: 'memory', front: 'f', back: 'b' });
     const state: CardState = {
       due: new Date('2026-08-01T00:00:00.000Z'),
@@ -68,6 +68,15 @@ describe('card queries', () => {
       lastReview: null,
     };
     upsertFsrsState(db, 'rn', state);
-    expect(getFsrsState(db, 'rn')).toEqual(state);
+    expect(getFsrsState(db, 'rn')).toEqual(state); // DB boundary
+
+    // Library boundary: our `null` <-> ts-fsrs `undefined` last_review.
+    // undefined -> null: an empty ts-fsrs card (no last_review) comes back as null.
+    expect(createEmptyCardState(new Date('2026-07-18T00:00:00.000Z')).lastReview).toBeNull();
+    // null -> undefined -> Date: a null lastReview fed through the wrapper is accepted
+    // and returns the review time (a Date) — never silently stuck at null.
+    const reviewedAt = new Date('2026-07-18T00:00:00.000Z');
+    const after = schedule({ ...state, lastReview: null }, 'good', reviewedAt);
+    expect(after.lastReview).toEqual(reviewedAt);
   });
 });
