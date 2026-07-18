@@ -1,0 +1,16 @@
+# Normalize all text files to LF in the repo and on checkout, so Git's
+# autocrlf never hands prettier (endOfLine: lf) a CRLF file. Binary files are
+# auto-detected by `text=auto` and left untouched.
+* text=auto eol=lf
+
+# Belt-and-suspenders for common binaries.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.wasm binary
+*.jks binary
+*.keystore binary
+*.p8 binary
+*.p12 binary
