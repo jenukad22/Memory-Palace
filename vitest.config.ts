@@ -12,14 +12,20 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
-    include: ['src/engine/**/*.test.ts', 'src/db/**/*.test.ts', 'src/ui/**/*.test.ts'],
+    include: [
+      'src/engine/**/*.test.ts',
+      'src/db/**/*.test.ts',
+      'src/ui/**/*.test.ts',
+      'src/assessment/**/*.test.ts',
+    ],
     coverage: {
       provider: 'v8',
-      include: ['src/engine/**/*.ts', 'src/db/**/*.ts', 'src/ui/**/*.ts'],
+      include: ['src/engine/**/*.ts', 'src/db/**/*.ts', 'src/ui/**/*.ts', 'src/assessment/**/*.ts'],
       exclude: [
         'src/engine/**/*.test.ts',
         'src/db/**/*.test.ts',
         'src/ui/**/*.test.ts',
+        'src/assessment/**/*.test.ts',
         'src/db/migrations.generated.ts',
       ],
     },

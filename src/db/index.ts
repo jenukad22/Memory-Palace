@@ -13,3 +13,4 @@ export * from './queries/sessions';
 export { seedDemoCards } from './seed';
 export { runDbSelfTest, type SelfTestResult } from './selftest';
 export { createDb, type AppDb } from './client';
+export { DbProvider, useDb } from './DbProvider';

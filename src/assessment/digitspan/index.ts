@@ -1,1 +1,1 @@
-export {};
+export { DigitSpanScreen } from './DigitSpanScreen';
