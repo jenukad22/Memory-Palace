@@ -32,6 +32,13 @@ yarn-error.*
 # test coverage
 coverage/
 
+# local sqlite artifacts (expo-sqlite runtime files)
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+
 # OS
 .DS_Store
 Thumbs.db
