@@ -47,10 +47,18 @@ describe('runMigrations', () => {
     );
   });
 
-  it('is idempotent (second run applies nothing new)', () => {
-    runMigrations(db); // already ran in createTestDb; must not throw
-    const applied = db.all(sql`SELECT tag FROM _migrations`) as { tag: string }[];
-    expect(applied.length).toBe(3);
+  it('applies all three migrations in order and is idempotent (second run applies nothing new)', () => {
+    const tags = () =>
+      (db.all(sql`SELECT tag FROM _migrations ORDER BY rowid`) as { tag: string }[]).map(
+        (r) => r.tag,
+      );
+    // createTestDb already ran runMigrations once; a second run must not throw or re-apply.
+    runMigrations(db);
+    expect(tags()).toEqual([
+      '0000_known_mephisto',
+      '0001_review_log_append_only',
+      '0002_robust_arclight',
+    ]);
   });
 
   it('blocks UPDATE and DELETE on review_log via triggers', () => {

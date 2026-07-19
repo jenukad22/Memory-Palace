@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "a6e76c1f-cfe6-4d32-bb11-23dd9ee32f3c",
-  "prevId": "67c6535a-ca0f-4765-a02e-75b65195c223",
+  "id": "d6dadec5-0680-4bff-9485-c49c968f7855",
+  "prevId": "a6e76c1f-cfe6-4d32-bb11-23dd9ee32f3c",
   "tables": {
     "ability_ratings": {
       "name": "ability_ratings",
@@ -62,6 +62,13 @@
         "normalized": {
           "name": "normalized",
           "type": "real",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "payload": {
+          "name": "payload",
+          "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
