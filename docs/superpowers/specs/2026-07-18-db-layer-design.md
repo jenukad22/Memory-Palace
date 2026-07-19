@@ -1,7 +1,7 @@
 # `/src/db` — Local persistence layer (Drizzle + expo-sqlite / sql.js)
 
 **Date:** 2026-07-18
-**Status:** Approved (design), pending implementation
+**Status:** Implemented (2026-07-19)
 **Scope:** Implement `/src/db` — schema, migrations, cross-platform client, thin typed query layer, seed, and verification.
 
 ## Goal
