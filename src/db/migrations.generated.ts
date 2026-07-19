@@ -27,4 +27,8 @@ export const MIGRATIONS: Migration[] = [
       "CREATE TRIGGER review_log_no_delete BEFORE DELETE ON review_log\nBEGIN\n  SELECT RAISE(ABORT, 'review_log is append-only');\nEND;",
     ],
   },
+  {
+    tag: '0002_robust_arclight',
+    statements: ['ALTER TABLE `assessments` ADD `payload` text;'],
+  },
 ];

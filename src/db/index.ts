@@ -7,6 +7,7 @@ export { runMigrations } from './migrate';
 export * from './queries/cards';
 export * from './queries/reviews';
 export * from './queries/assessments';
+export * from './queries/vviq';
 export * from './queries/ability';
 export * from './queries/sessions';
 export { seedDemoCards } from './seed';

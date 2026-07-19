@@ -7,6 +7,7 @@ export interface NewAssessmentInput {
   instrument: string;
   rawScore: number;
   normalized?: number | null;
+  payload?: string | null;
   ts?: Date;
   id?: string;
 }
@@ -17,6 +18,7 @@ export function insertAssessment(db: Db, input: NewAssessmentInput): AssessmentR
     instrument: input.instrument,
     rawScore: input.rawScore,
     normalized: input.normalized ?? null,
+    payload: input.payload ?? null,
     ts: input.ts ?? new Date(),
   };
   db.insert(assessments).values(row).run();

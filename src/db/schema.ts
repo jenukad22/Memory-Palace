@@ -58,6 +58,7 @@ export const assessments = sqliteTable('assessments', {
   instrument: text('instrument').notNull(),
   rawScore: real('raw_score').notNull(),
   normalized: real('normalized'), // within-instrument only; nullable
+  payload: text('payload'), // JSON string, nullable — per-trial detail (SPEC.md sec 12)
   ts: integer('ts', { mode: 'timestamp_ms' }).notNull(),
 });
 

@@ -50,7 +50,7 @@ describe('runMigrations', () => {
   it('is idempotent (second run applies nothing new)', () => {
     runMigrations(db); // already ran in createTestDb; must not throw
     const applied = db.all(sql`SELECT tag FROM _migrations`) as { tag: string }[];
-    expect(applied.length).toBe(2);
+    expect(applied.length).toBe(3);
   });
 
   it('blocks UPDATE and DELETE on review_log via triggers', () => {

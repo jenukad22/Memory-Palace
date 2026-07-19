@@ -24,6 +24,20 @@ describe('assessments / ability / sessions queries', () => {
     expect(listAssessments(db, 'pvt')[0]?.normalized).toBeNull();
   });
 
+  it('round-trips assessments.payload (set and omitted-defaults-to-null)', () => {
+    insertAssessment(db, {
+      instrument: 'digitspan_forward',
+      rawScore: 6,
+      payload: JSON.stringify({ trials: [true, false, true, true] }),
+      ts: new Date('2026-07-19Z'),
+    });
+    insertAssessment(db, { instrument: 'corsi_forward', rawScore: 5, ts: new Date('2026-07-19Z') });
+    const withPayload = listAssessments(db, 'digitspan_forward')[0];
+    const withoutPayload = listAssessments(db, 'corsi_forward')[0];
+    expect(withPayload?.payload).toBe('{"trials":[true,false,true,true]}');
+    expect(withoutPayload?.payload).toBeNull();
+  });
+
   it('upserts an ability rating per module', () => {
     upsertAbility(db, 'memory', 1500, new Date('2026-07-18Z'));
     expect(getAbility(db, 'memory')?.elo).toBe(1500);

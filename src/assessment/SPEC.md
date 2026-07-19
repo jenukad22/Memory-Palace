@@ -277,3 +277,9 @@ Both land **before** any `assessments` rows are written, so no backfill is neede
 
 These two are a **separate migration + engine/query cycle**, not part of the Phase 3 engine modules
 below, which depend only on the existing schema.
+
+**Resolved 2026-07-20** — see
+[docs/superpowers/specs/2026-07-20-assessments-followups-design.md](../../docs/superpowers/specs/2026-07-20-assessments-followups-design.md).
+(1) `assessments.payload` landed as a nullable JSON text column, migration `0002_robust_arclight`.
+(2) VVIQ routing-flag storage decision: **derive, not store** — `getVviqStrategy(db)` recomputes
+from the most recent `vviq` assessments row on every call.

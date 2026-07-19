@@ -33,6 +33,12 @@ numbered `.sql` file (the bundler picks up files in lexical order).
   row maps to a `CardState` with no translation. [fsrs-typecheck.ts](./fsrs-typecheck.ts) guards this
   against ts-fsrs version drift at compile time.
 - **`is_synced` / `is_deleted` on `cards` only;** card deletion is soft.
+- **`assessments.payload`** is a nullable JSON text column for per-trial detail (per-length
+  pass/fail, partial-credit counts, future PVT per-trial RTs) — same pattern as `cards.payload`.
+- **The VVIQ ≤32 substitute-strategy flag (SPEC.md sec 8) is derived, not stored.**
+  `getVviqStrategy(db)` reads the most recent `vviq` assessment row and recomputes the strategy on
+  every call, so a retake supersedes the prior result automatically. See
+  [2026-07-20-assessments-followups-design.md](../../docs/superpowers/specs/2026-07-20-assessments-followups-design.md).
 - **`PRAGMA foreign_keys = ON` on both platforms;** **`journal_mode = WAL` on native only** (sql.js
   is in-memory).
 
