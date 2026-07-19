@@ -2,11 +2,12 @@
   "expo": {
     "name": "Memory Palace",
     "slug": "memory-palace",
+    "scheme": "memorypalace",
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "platforms": ["ios", "android", "web"],
-    "plugins": ["expo-sqlite"]
+    "plugins": ["expo-sqlite", "expo-router", "expo-status-bar"]
   }
 }
