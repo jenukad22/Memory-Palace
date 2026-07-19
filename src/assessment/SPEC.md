@@ -1,10 +1,12 @@
 # Baseline Assessment — Specification (Phase 3)
 
 **Date:** 2026-07-19
-**Status:** Draft — CONFIRM items pending review before any screen work
-**Scope:** Administration, stopping, scoring, and raw→normalized→starting-Elo mapping for the six
-baseline instruments (VVIQ, digit span, Corsi, N-back, PVT, reasoning), plus the VVIQ routing rule.
-**Non-scope:** Screens/UI (waits for DESIGN.md), the expo-router app shell, training-loop scheduling.
+**Status:** Decisions resolved. Phase 3 implements the **memory** module only (§3–§5). §6/§7/§9 are
+**deferred — design only**. Screens blocked on DESIGN.md; engine modules unblocked.
+**Scope (implemented):** VVIQ, digit span (forward + backward), Corsi (forward + backward) —
+administration, stopping, scoring, and raw→Elo seeding, plus the VVIQ routing rule.
+**Non-scope:** Screens/UI (DESIGN.md), the expo-router app shell, training-loop scheduling, and the
+deferred instruments (§6/§7/§9).
 
 ---
 
@@ -12,275 +14,266 @@ baseline instruments (VVIQ, digit span, Corsi, N-back, PVT, reasoning), plus the
 
 These govern every formula, string, and asset in this phase.
 
-- **Task-specific reporting only.** Every result describes performance on that task — reaction time,
-  span length, accuracy, d′, sequence recall. No identifier, copy, or notification may imply general
+- **Task-specific reporting only.** Every result describes performance on that task — span length,
+  vividness rating, sequence recall. No identifier, copy, or notification may imply general
   intelligence, IQ, memory "age", health, or diagnosis (CLAUDE.md). Analytics names describe the task
-  (`digitspan_span_recorded`, not `iq_estimate`).
+  (`digitspan_forward_span_recorded`, not `iq_estimate`).
 - **No proprietary test material.** We implement published _paradigms_, not their copyrighted content:
-  - Digit span / working-memory span: Wechsler-style **paradigm** only (two trials per length,
-    discontinue after both fail, span = longest length reproduced). **We generate our own random digit
-    sequences.** No Pearson item lists, administration scripts, or norm tables.
+  - Digit span: Wechsler-style **paradigm** only (two trials per length, discontinue after both fail,
+    span = longest length reproduced). **We generate our own random digit sequences.** No Pearson item
+    lists, administration scripts, or norm tables.
   - VVIQ: Marks' **structure** only (16 items, 1–5 rating, 16–80 total, 4 scene-groups of 4). **We
     write our own item wording.** No reproduction of Marks' item text.
   - Corsi: the classic **9-block spatial layout** is public and may be followed; sequences are ours.
-  - Raven-style reasoning: **no** SPM/APM items. We author or procedurally generate our own.
-- **Norm figures are orientation only.** Any adult figure cited below (e.g. forward digit span ≈ 7±2;
-  Corsi ≈ 5) comes from **lab administration with spoken/manual recall** and is **not** our scoring
-  basis. Our typed/tapped, self-administered variants are not clinically comparable. **Per the plan,
-  the normative reference is our own accumulating data** (§2). Orientation figures may appear in
-  internal docs but **never** in user-facing copy, and never framed as a target or a diagnosis.
+- **Norm figures are orientation only, and are NOT imported as a scoring basis.** Adult lab figures
+  (spoken-recall digit span ≈ 7±2; Corsi ≈ 5) come from administration methods not comparable to our
+  typed/tapped, self-administered variants. They may appear in internal docs for orientation but
+  **never** in user-facing copy, and **never** as constants in our scoring or normalization
+  (this is why §2.1 rejects bootstrap norm constants). **The normative reference is our own accumulating
+  data.** For a single user, **within-user change over time is the meaningful signal**, not a cross-user
+  z-score; the dashboard reflects that.
 
 ---
 
 ## 1. Instruments, modules, and the baseline flow
 
-Six instruments seed three module ability ratings (`ability_ratings.elo`, keyed by `module`):
+Phase 3 implements the **memory** module only. `attention` and `reasoning` modules don't exist yet
+(Phases 6.1/6.2), so their instruments are deferred (§6/§7/§9) — designed here, not built.
 
-| Module      | Instruments (baseline)                    |
-| ----------- | ----------------------------------------- |
-| `memory`    | VVIQ (imagery routing), digit span, Corsi |
-| `attention` | PVT, N-back                               |
-| `reasoning` | reasoning                                 |
+**Implemented instruments (five `assessments.instrument` values):**
 
-**Baseline order (CONFIRM ordering):** VVIQ → digit span → Corsi → PVT → N-back → reasoning. Rationale:
-VVIQ first because it gates the memory-palace instruction path (§8); PVT before N-back so vigilance is
-measured before a demanding WM task fatigues the user. **CONFIRM** whether all six run in one baseline
-session or are split across sessions (fatigue: full battery is long — see per-instrument durations).
+| Module   | Instruments (rows written)                                                   | Role                      |
+| -------- | ---------------------------------------------------------------------------- | ------------------------- |
+| `memory` | `digitspan_forward`, `digitspan_backward`, `corsi_forward`, `corsi_backward` | seed the `memory` Elo     |
+| —        | `vviq`                                                                       | routing only (§8), no Elo |
 
-**Combining instruments into a module Elo (CONFIRM).** Each instrument yields a normalized score (§2);
-a module's starting Elo is seeded from its instruments. Proposed: **equal-weight mean of the
-instruments' normalized scores**, then mapped to Elo (§2.3). VVIQ is **not** a performance score and is
-**excluded** from the `memory` Elo — it only drives routing (§8). **CONFIRM** weights (e.g. whether
-digit span and Corsi are equally weighted in `memory`).
+**Baseline order.** VVIQ → digit span (forward, then backward) → Corsi (forward, then backward).
+**Single session**, with the existing **"finish later" checkpoint between instruments** (a user may
+stop between instruments and resume; mid-instrument resume is not required). Memory-only keeps the
+battery inside the ~13–15 min onboarding budget.
 
-Each instrument also writes one `assessments` row (`instrument`, `raw_score`, `normalized`, `ts`) via
-the Phase 2 query layer. `normalized` is null until the normalization reference exists (§2.1).
+**Module Elo.** `memory` Elo = **equal-weight mean of the four span instruments' normalized scores**
+(`digitspan_forward`, `digitspan_backward`, `corsi_forward`, `corsi_backward`), mapped to Elo (§2.3).
+**VVIQ is excluded** from the Elo — it is not a performance score and drives routing only (§8).
+
+Each implemented instrument writes one `assessments` row (`instrument`, `raw_score`, `normalized`, `ts`)
+via the Phase 2 query layer. `normalized` is **null** in this phase (§2.1).
 
 ---
 
 ## 2. raw → normalized → starting-Elo (cross-cutting)
 
-### 2.1 Normalization reference — **CONFIRM**
+### 2.1 Normalization — **deferred empirical z, with a monotonic proxy until then**
 
-Per the plan, **the norm reference is our own accumulating per-instrument distribution**. Definition:
-`normalized = z = (raw − μ_instrument) / σ_instrument`, where μ/σ come from all prior valid
-`assessments` rows for that instrument (optionally most-recent-N). Higher normalized = better on that
-task's own terms (for RT-type raw scores, invert so higher = better — see per-instrument).
+Decision: **option (b), defer.** We do **not** import lab bootstrap constants (§0 forbids them as a
+scoring basis). Concretely:
 
-**Cold-start problem — CONFIRM.** With few users there is no stable μ/σ. Options:
+- Store `raw_score`; leave `assessments.normalized = null`.
+- Until `N ≥ N_MIN` valid samples exist **per instrument**, seed Elo from raw via the **fixed monotonic
+  proxy** below (not persisted — computed on the fly for seeding).
+- At `N ≥ N_MIN`, switch that instrument to **empirical z** `= (raw − μ) / σ` over its accumulated
+  `assessments` rows (and `normalized` may then be persisted).
+- **`N_MIN = 200`** valid samples per instrument.
 
-- **(a) Bootstrap constants**, clearly labeled provisional, from orientation literature, used only until
-  `N ≥ N_min` valid samples exist per instrument, then switch to empirical μ/σ. **CONFIRM N_min** (e.g. 100) and the bootstrap μ/σ per instrument.
-- **(b) Defer normalization**: store `raw_score`, leave `normalized = null`, seed Elo from raw via a
-  fixed monotonic map until the reference exists.
-  Recommended: **(a)** with provisional constants flagged in-code as orientation, never user-visible.
+**Monotonic proxy (span → normalized proxy) — explicit and testable.** Span instruments have achievable
+span in `[0, MAX_SPAN]` with `MAX_SPAN = 9`.
+
+```
+proxy(span) = clamp((span − SPAN_MID) / SPAN_SPREAD, −Z_CAP, +Z_CAP)
+  SPAN_MID    = 4.5    // structural midpoint of the achievable range [0, 9]
+  SPAN_SPREAD = 2.25   // maps the full range to ≈ [−2, +2]
+  Z_CAP       = 3
+```
+
+`SPAN_MID`/`SPAN_SPREAD` are **structural scalings of the achievable-span axis**, chosen so Elo seeds
+spread sensibly — **not** population statistics and **not** derived from any lab norm. They are
+superseded per-instrument by empirical z at `N_MIN`. The same proxy applies to all four span
+instruments (shared `[0, 9]` scale).
 
 ### 2.2 Where the math lives
 
-All scoring, sequence generation, stopping-rule evaluation, normalization, and Elo seeding are
-**pure functions in `/src/engine`** (framework-free, unit-tested per CLAUDE.md). `/src/assessment`
-screens only present stimuli and collect raw responses. New engine modules (proposed):
-`assessment/` under engine — `sequences.ts` (digit/Corsi/n-back generation), `scoring.ts` (per-instrument
-raw scores), `normalize.ts` (z + bootstrap), `seedElo.ts` (normalized → Elo). Each with `*.test.ts`.
+All scoring, sequence generation, stopping-rule evaluation, normalization, and Elo seeding are **pure
+functions in `/src/engine`** (framework-free, unit-tested per CLAUDE.md). `/src/assessment` screens only
+present stimuli and collect raw responses. New engine modules (this phase):
+`src/engine/assessment/` — `sequences.ts` (digit + Corsi generation), `scoring.ts` (span from trials,
+VVIQ total), `normalize.ts` (proxy + empirical z + switch), `seedElo.ts` (normalized → Elo, module mean,
+provisional-K). Each with `*.test.ts`.
 
-### 2.3 normalized → starting-Elo — **CONFIRM**
+### 2.3 normalized → starting-Elo — resolved
 
-Map a module's combined normalized score `z` to a starting Elo:
-`elo = ELO_MIDPOINT + z · ELO_PER_SD`, clamped to `[ELO_MIN, ELO_MAX]`.
-Proposed constants (**CONFIRM all**): `ELO_MIDPOINT = 1200`, `ELO_PER_SD = 200`, `ELO_MIN = 400`,
-`ELO_MAX = 2400`. These feed `upsertAbility(db, module, elo)`.
-**K-factor — CONFIRM.** Engine default is `DEFAULT_K_FACTOR = 32` ([elo.ts](../engine/elo.ts)). Baseline
-seeds are uncertain, so a **provisional-rating scheme** is proposed: higher K (e.g. 48) for the first
-`M` training items, decaying to 32. **CONFIRM** K schedule and `M`, or accept fixed 32.
+```
+elo = clamp(ELO_MIDPOINT + z · ELO_PER_SD, ELO_MIN, ELO_MAX)
+  ELO_MIDPOINT = 1200
+  ELO_PER_SD   = 200
+  ELO_MIN      = 400
+  ELO_MAX      = 2400
+```
+
+where `z` is the module's combined normalized score (mean of the four span proxies/z-scores). Feeds
+`upsertAbility(db, 'memory', elo)`.
+
+**K-factor — resolved (provisional scheme).** `K = 48` for the first **`M = 30`** rated items **per
+module**, then `K = 32` (engine `DEFAULT_K_FACTOR`, [elo.ts](../engine/elo.ts)). Baseline seeds are
+uncertain enough to justify faster early correction. `provisionalK(ratedItemCount)` lives in the engine;
+the training loop (later phase) applies it.
 
 ---
 
 ## 3. VVIQ — visual imagery (routing instrument, not scored into Elo)
 
 **Paradigm (Marks 1973 structure; our wording).** 16 items in 4 groups of 4 scenes; each rated 1–5;
-total 16–80. **Higher = more vivid** (VVIQ2 convention). We author our own item text describing scenes
-to visualize (e.g. a rising sun, a familiar person's face) and the 1–5 anchors ("No image at all" …
-"Perfectly clear and vivid as real seeing").
+total 16–80. **Higher = more vivid** (VVIQ2 direction). We author our own scene descriptions (e.g. a
+rising sun, a familiar face) and 1–5 anchors ("No image at all" … "Perfectly clear and vivid as real
+seeing").
 
-**Administration.** All 16 items, self-paced, single eyes-open pass (**CONFIRM** whether to also run the
-traditional eyes-closed pass — doubles length; recommend single pass for baseline). No time limit.
+**Administration.** All 16 items, self-paced, **single eyes-open pass** (no eyes-closed pass). No time
+limit.
 
-**Stopping.** Fixed: all 16 items answered. No discontinue rule.
+**Stopping.** Fixed: all 16 items answered.
 
-**Scoring.** `raw = Σ(16 items)`, range 16–80. Not z-normalized and **not** seeded into `memory` Elo;
-VVIQ drives routing only (§8). Stored as an `assessments` row with `instrument = 'vviq'`,
-`raw_score = total`, `normalized = null`.
+**Scoring.** `raw = Σ(16 items)`, range 16–80. **Not** seeded into Elo. Written as an `assessments` row
+`instrument = 'vviq'`, `raw_score = total`, `normalized = null`.
 
-**Orientation only:** population mean ≈ 60–75; the commonly cited **aphantasia cutoff is ≤ 32**
-(Zeman et al.). We use ≤ 32 for routing (§8), **not** as a diagnosis. **CONFIRM** the exact threshold
-and scoring direction (if we adopt reverse 1=vivid…5=none scoring instead, the comparator flips).
-
----
-
-## 4. Digit span — verbal working memory
-
-**Paradigm (Wechsler-style; our sequences).** Sequences of single digits (0–9) shown one at a time;
-user reproduces by typing. **Two trials per length.** Start at length **3** (**CONFIRM** start length).
-Increase length by 1 after a length passes.
-
-**Stopping — CONFIRM.** Discontinue when **both trials at a length fail**. `span = longest length
-reproduced`. **CONFIRM the "reproduced" criterion:** 1-of-2 correct vs 2-of-2 correct at that length.
-Also **CONFIRM** max length cap (e.g. 9) and whether **backward** span is included (recommend forward
-only for baseline; backward is a separate, harder instrument — **CONFIRM**).
-
-**Sequence generation — CONFIRM constraints.** Uniform random digits 0–9; proposed constraints: no
-immediately repeated digit, and not a strictly ascending/descending run. Deterministic under a seed for
-test reproducibility (engine `sequences.ts`). **CONFIRM** constraints.
-
-**Scoring.** `raw = span` (longest length reproduced). Optional partial-credit variant (# correct
-trials) — **CONFIRM** which is the raw score. Presentation timing: one digit per ~1000 ms with ~1000 ms
-ISI (**CONFIRM** timing).
-
-**Orientation only:** spoken-recall forward span ≈ 7±2 (Miller 1956) — not comparable to typed recall;
-scored against our own distribution.
+**Routing.** `raw ≤ 32` → non-visual strategy (§8). Threshold **≤ 32**, higher = more vivid.
+_Orientation only:_ ≤ 32 is the commonly cited aphantasia range (Zeman et al.) — used for routing, never
+as a diagnosis.
 
 ---
 
-## 5. Corsi block-tapping — visuospatial working memory
+## 4. Digit span — verbal working memory (forward + backward)
 
-**Paradigm (Corsi 1972; Kessels et al. 2000 scoring; standard 9-block layout).** Nine blocks in the
-classic irregular arrangement; a sequence of blocks highlights in order; user taps them back. Same
-span structure as digit span: **two trials per length, discontinue after both fail, span = longest
-reproduced.** Start length **2** (**CONFIRM**).
+**Paradigm (Wechsler-style; our sequences).** Digits shown one at a time; user reproduces by typing.
+**Forward** and **backward** are run and stored as **separate instruments** (`digitspan_forward`,
+`digitspan_backward`).
 
-**Stopping — CONFIRM.** Identical criterion decision as §4 (1-of-2 vs 2-of-2). Max length = 9.
+**Administration & stopping — resolved.**
 
-**Sequence generation — CONFIRM.** Random ordering over the 9 fixed positions; proposed constraints: no
-immediate repeat of a block; **CONFIRM** whether to forbid path self-crossing or adjacent-only hops
-(classic Corsi allows arbitrary jumps — recommend arbitrary). Seeded/deterministic for tests.
+- **Two trials per length.** Start at length **3**. Increase by 1 after a length passes.
+- **"Reproduced" = at least 1 of 2 trials correct** at that length (consistent with discontinuing only
+  after _both_ fail).
+- **Discontinue** when both trials at a length fail. **`span = longest length reproduced`.**
+- **Max length cap = 9.**
+- Backward: same rules; the user reproduces the sequence in reverse order.
 
-**Scoring.** `raw = Corsi span`. Optional **Corsi total = span × number of correctly reproduced
-sequences** (Kessels) — **CONFIRM** raw definition. Highlight timing ~1000 ms on / ~250 ms gap
-(**CONFIRM**).
+**Sequence generation — resolved.** Uniform random digits 0–9; constraints: **no immediately repeated
+digit**, and **not a strictly ascending or descending run**. **Seeded / deterministic** for tests
+(engine `sequences.ts`).
 
-**Orientation only:** Corsi span ≈ 5 in lab settings — not our scoring basis.
-
----
-
-## 6. N-back — working-memory updating (attention module)
-
-**Paradigm (Kirchner 1958; Jaeggi et al.).** A stream of stimuli; user responds when the current
-stimulus matches the one _n_ back. **CONFIRM** the following, all app-specific:
-
-- **n for baseline:** fixed **2-back** (recommended for a stable baseline) vs adaptive n. **CONFIRM.**
-- **Stimulus type:** single letters vs spatial positions (recommend letters for baseline). **CONFIRM.**
-- **Block structure:** trials per block and number of blocks (proposed: 20 + n trials × 1–2 blocks).
-  **CONFIRM.**
-- **Target rate:** ~30% matches. **CONFIRM.**
-- **Timing:** stimulus ~500 ms, ISI ~2000 ms. **CONFIRM.**
-
-**Stopping.** Fixed trial count (no staircase at baseline).
-
-**Scoring — CONFIRM.** Primary raw = **d′ = z(hit rate) − z(false-alarm rate)** (signal-detection;
-robust to response bias), with edge-correction for 0/1 rates (loglinear). Alternatives: % correct or A′.
-**CONFIRM** d′ vs accuracy. For normalization, higher d′ = better (no inversion).
+**Scoring.** `raw = span`. **Timing:** each digit displayed **800 ms + 200 ms gap** (~1 digit/sec).
+Per-trial detail (which trials passed at each length) is retained for the future `assessments.payload`
+column (§12 follow-up) but is not the raw score.
 
 ---
 
-## 7. PVT — psychomotor vigilance (attention module)
+## 5. Corsi block-tapping — visuospatial working memory (forward + backward)
 
-**Paradigm (Dinges & Powell 1985).** A counter/stimulus appears after a **random ISI of 2–10 s**; user
-responds as fast as possible; RT recorded. Repeated for a fixed duration.
+**Paradigm (Corsi 1972; standard 9-block layout).** Nine blocks in the classic irregular arrangement; a
+sequence of blocks highlights in order; user taps them back. **Forward** and **backward** stored as
+separate instruments (`corsi_forward`, `corsi_backward`).
 
-**Duration — CONFIRM.** Full PVT is 10 min — too long for an app baseline. Proposed: **PVT-B (3 min)**
-or a 5-min variant. **CONFIRM** duration.
+**Administration & stopping — resolved.** Same span structure as §4: two trials per length,
+**1-of-2 "reproduced" criterion**, discontinue after both fail, `span = longest reproduced`.
+**Start length 2.** Max length 9. Backward: reproduce in reverse tap order.
 
-**Lapse threshold — CONFIRM.** Standard lapse = RT > **500 ms** (10-min PVT). PVT-B commonly uses
-**355 ms**. **CONFIRM** which threshold we adopt (drives the lapse count). False starts (response before
-stimulus or RT < 100 ms) are recorded and excluded from RT stats.
+**Sequence generation — resolved.** Random ordering over the 9 fixed positions; **arbitrary jumps
+allowed** (no path-crossing or adjacency constraints); only constraint is **no immediate repeat of a
+block**. Seeded / deterministic for tests.
 
-**Scoring — CONFIRM primary metric.** Candidates: mean RT, **response speed = mean(1/RT)** (Dinges'
-preferred, less skewed), lapse count. Proposed raw = **response speed (1/RT, 1/s)**; for normalization
-higher = better (already oriented). **CONFIRM** primary metric and which secondary metrics we persist
-(the `assessments` row stores one `raw_score`; richer per-trial data is out of scope unless we add a
-payload column — **CONFIRM**).
-
-**Stopping.** Fixed duration.
+**Scoring.** `raw = span`. **Kessels "total" (span × correct sequences) is not the raw score** —
+per-trial counts go to the future `payload` column (§12 follow-up). **Timing:** each block highlighted
+**1000 ms on / 250 ms gap.**
 
 ---
 
-## 8. VVIQ ≤ 32 routing rule — **CONFIRM the action**
+## 6. N-back — **DEFERRED (design only, not built in Phase 3)**
 
-The memory module's core technique (method of loci / memory palace) depends on **voluntary visual
-imagery**. Users in the aphantasia range cannot use it as written.
-
-**Trigger.** `vviq_total ≤ 32` (per §3; **CONFIRM** threshold and scoring direction).
-
-**Action — CONFIRM (this is the key decision).** What specifically changes when triggered? Options:
-
-- **(a) Substitute strategy:** replace visual method-of-loci instructions with a **non-visual mnemonic**
-  path (verbal/semantic elaboration or spatial-motor "route by movement" encoding), applied to the same
-  cards and schedule. Nothing else changes; FSRS/Elo unaffected.
-- **(b) Adapt copy only:** keep the palace but reword instructions to lean on spatial/semantic cues
-  rather than "picture vividly".
-- **(c) Flag only:** record the flag, change nothing user-facing yet.
-  Recommended: **(a)**. **CONFIRM** the exact instructional change and whether it's reversible if the user
-  re-takes VVIQ. The routing flag is persisted (**CONFIRM storage** — e.g. a `memory` profile field; no
-  schema exists for it yet, so this may need a Phase-2-style follow-up). No user-facing string may label
-  the user "aphantasic" or imply a deficit — copy is strictly "we'll use a strategy that fits you."
+Belongs to the `attention` module (Phase 6.1). Recorded design for when it lands; **no engine code,
+screens, or `assessments` rows now.** When implemented (all still CONFIRM at that time): fixed **2-back**
+baseline, single-letter stimuli, ~30% target rate, fixed trial count, primary raw = **d′** (loglinear
+edge-corrected).
 
 ---
 
-## 9. Reasoning — fluid reasoning (reasoning module)
+## 7. PVT — **DEFERRED (design only, not built in Phase 3)**
 
-**Paradigm — CONFIRM (most open instrument).** No SPM/APM content. Candidate self-authored paradigms:
+Belongs to the `attention` module (Phase 6.1). Recorded deferred defaults for when it lands; **not
+built now:** **PVT-B (3 min)**, random ISI 2–10 s, **lapse threshold 355 ms**, primary metric =
+**response speed (mean 1/RT)**. False starts (RT < 100 ms or pre-stimulus) excluded from RT stats.
 
-- **Matrix reasoning** (procedurally generated abstract 3×3 matrices with a rule-based missing cell),
-- **Number/letter series** (rule-based sequence completion),
-- **Verbal analogies** (our item bank).
-  Recommended baseline: **procedurally generated matrix reasoning** (language-neutral, infinite items,
-  Elo-friendly). **CONFIRM** paradigm(s) and item-generation approach.
+---
 
-**Administration & stopping — CONFIRM.** Options: **fixed set** (e.g. 12 items of graded difficulty) vs
-**adaptive** (Elo/IRT-driven item selection, stop when the ability-estimate SE < threshold or after a
-max item count). Recommend **fixed 12-item graded set** for a deterministic baseline; adaptive selection
-belongs to the training loop. **CONFIRM** item count and difficulty grading.
+## 8. VVIQ ≤ 32 routing rule — resolved (substitute strategy)
 
-**Scoring — CONFIRM.** Raw = number correct (0–12) for a fixed set, or the Elo/IRT ability estimate for
-adaptive. Higher = better. **CONFIRM.**
+The memory palace (method of loci) depends on voluntary visual imagery. Users in the low-imagery range
+can't use it as written.
+
+**Trigger.** `vviq_total ≤ 32` (higher = more vivid).
+
+**Action — option (a), substitute strategy.** Replace the visual method-of-loci instructions with a
+**non-visual path**: **spatial-motor route encoding** (encode by an imagined _movement/route_ rather
+than a pictured scene) **plus verbal/semantic elaboration**, applied to the **same cards and the same
+schedule**. **FSRS and Elo are untouched** — only the instructional/encoding guidance changes.
+
+**Reversibility.** The strategy flag **derives from the most recent VVIQ result and is not sticky** — if
+the user retakes VVIQ and scores > 32, they get the visual path. (Storage is a tracked follow-up — §12.)
+
+**Copy.** No user-facing string labels the user "aphantasic" or implies a deficit. Copy is strictly
+"we'll use a strategy that fits how you think."
+
+---
+
+## 9. Reasoning — **DEFERRED (design only, not built in Phase 3)**
+
+Belongs to the `reasoning` module (Phase 6.2). Recorded deferred defaults for when it lands; **not built
+now:** **procedurally generated matrix reasoning** (abstract 3×3, rule-based missing cell; no SPM/APM
+content), **fixed 12-item graded set**, raw = number correct.
 
 ---
 
 ## 10. Data written per instrument
 
-Each completed instrument writes one `assessments` row through the Phase 2 query layer:
-`insertAssessment(db, { instrument, rawScore, normalized })` — `normalized` null until the reference
-exists (§2.1). Module Elo seeding calls `upsertAbility(db, module, elo)` once per module after its
-instruments complete. Baseline runs inside a `sessions` row (`startSession`/`endSession`) with
-`items = instruments completed`, `accuracy` left 0 or a battery-completion proxy (**CONFIRM** what
-`accuracy` means for a mixed battery, or leave 0).
+Each completed implemented instrument writes one `assessments` row via
+`insertAssessment(db, { instrument, rawScore, normalized })` — `normalized` **null** this phase (§2.1).
+After the four span instruments complete, one `upsertAbility(db, 'memory', elo)` seeds the module Elo.
+
+The baseline runs inside a `sessions` row (`startSession`/`endSession`). **`sessions.accuracy` is left
+`0` and is meaningless for battery sessions** — accuracy is a training-loop metric, not a battery one.
+We do **not** churn the schema for it.
 
 ---
 
-## 11. Engine ↔ screen division (forward reference)
+## 11. Engine ↔ screen division
 
-- **Engine (this phase's testable core):** sequence generation, per-instrument scoring, d′/RT math,
-  normalization, Elo seeding, stopping-rule evaluation, VVIQ threshold check. All in `/src/engine`,
-  each with Vitest coverage. **This is what Phase 3 implementation builds first.**
-- **Screens (`/src/assessment/*`):** presentation and raw-response capture only. **Blocked on DESIGN.md**
-  — the digit-span pad, Corsi grid, VVIQ Likert, PVT reaction surface, and n-back stream are built from
-  `/src/ui` tokens/components, not styled ad hoc.
+- **Engine (this phase's testable core, built now):** digit + Corsi sequence generation, span-from-trials
+  scoring, VVIQ total, the monotonic proxy + empirical-z switch, module-mean + Elo seeding + provisional-K.
+  All in `src/engine/assessment/`, each with Vitest coverage. **Not blocked on design.**
+- **Screens (`/src/assessment/*`):** presentation + raw-response capture only. **Blocked on DESIGN.md** —
+  digit-span pad, Corsi grid, VVIQ Likert built from `/src/ui` tokens, not styled ad hoc.
 - **App shell:** expo-router (`app/`) entry, scaffolded separately (recorded, not part of this spec).
 
 ---
 
-## 12. Consolidated CONFIRM list (review before screens)
+## 12. Resolved decisions + tracked follow-ups
 
-**Framework**
+**All CONFIRM items are resolved above.** Summary of the binding numbers: baseline order VVIQ →
+digitspan(F,B) → corsi(F,B), single session with finish-later checkpoints; `memory` Elo = equal-weight
+mean of the four span proxies, VVIQ excluded; normalization deferred (option b), `N_MIN = 200`, monotonic
+proxy `SPAN_MID 4.5 / SPAN_SPREAD 2.25 / Z_CAP 3`; Elo `MIDPOINT 1200 / PER_SD 200 / MIN 400 / MAX 2400`;
+`K = 48` for first `M = 30` rated items then 32; VVIQ eyes-open single pass, threshold ≤ 32 (higher =
+vivid); digit span start 3, Corsi start 2, 1-of-2 reproduced, cap 9, forward+backward as separate rows,
+raw = span; digit timing 800/200 ms, Corsi 1000/250 ms; routing = substitute non-visual strategy,
+non-sticky; `sessions.accuracy` = 0 for batteries.
 
-1. Baseline ordering and single-session vs split (§1).
-2. Module→Elo combination weights; VVIQ excluded from `memory` Elo (§1).
-3. Normalization reference: empirical z; cold-start bootstrap (a) vs defer (b); `N_min`; provisional μ/σ (§2.1).
-4. Elo seeding constants: `ELO_MIDPOINT/PER_SD/MIN/MAX` (§2.3).
-5. K-factor schedule (provisional-K vs fixed 32) and `M` (§2.3).
+### Tracked follow-ups (one migration, handled Phase-2 style: spec → plan → TDD → green commit)
 
-**Per-instrument** 6. VVIQ: eyes-open only vs +eyes-closed; threshold + scoring direction (§3, §8). 7. Digit span: start length; "reproduced" = 1-of-2 vs 2-of-2; max cap; forward-only vs +backward; sequence constraints; timing; raw = span vs partial-credit (§4). 8. Corsi: start length; reproduced criterion; sequence constraints; raw = span vs Kessels total; timing (§5). 9. N-back: n level; stimulus type; block/trial counts; target rate; timing; raw = d′ vs accuracy (§6). 10. PVT: duration (PVT-B 3-min?); lapse threshold (500 vs 355 ms); primary metric (1/RT vs mean RT vs lapses); secondary-metric persistence (§7). 11. Reasoning: paradigm; fixed vs adaptive; item count/grading; raw definition (§9).
+Both land **before** any `assessments` rows are written, so no backfill is needed:
 
-**Routing** 12. VVIQ ≤32 action (substitute strategy / adapt copy / flag only) and where the routing flag is stored (no schema yet) (§8).
+1. **`assessments.payload` (nullable JSON text) column.** Per-trial detail — per-length trial
+   pass/fail, partial-credit counts, and later PVT per-trial RTs — currently discarded by the single
+   `raw_score`. Cheaper to add before rows exist; enables re-analysis and the future empirical-z switch.
+2. **VVIQ routing-flag storage.** Where the derived strategy (`visual` | `non-visual`) lives. Since it
+   derives from the most recent VVIQ result and isn't sticky, it may be computed on read rather than
+   stored — the follow-up decides storage vs. derivation. No schema exists for it today.
 
-**Data** 13. What `sessions.accuracy` means for a mixed battery, or leave 0 (§10).
+These two are a **separate migration + engine/query cycle**, not part of the Phase 3 engine modules
+below, which depend only on the existing schema.
