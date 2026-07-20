@@ -49,6 +49,23 @@ export function listPaoEntries(db: Db): PaoEntry[] {
     .sort((a, b) => a.n - b.n);
 }
 
+export interface PaoCard {
+  cardId: string;
+  entry: PaoEntry;
+}
+
+/** Authored entries paired with their card ids, ascending by number — for drills that log reviews. */
+export function listPaoCards(db: Db): PaoCard[] {
+  return db
+    .select({ id: cards.id, payload: cards.payload })
+    .from(cards)
+    .where(and(eq(cards.module, PAO_MODULE), eq(cards.isDeleted, false)))
+    .all()
+    .map((c) => ({ cardId: c.id, entry: JSON.parse(c.payload ?? '{}') as PaoEntry }))
+    .filter((c) => Number.isInteger(c.entry.n))
+    .sort((a, b) => a.entry.n - b.entry.n);
+}
+
 /** Completeness / duplicate report for the authored alphabet. */
 export function paoStatus(db: Db): PaoListStatus {
   return validatePaoList(listPaoEntries(db));

@@ -51,6 +51,25 @@ export function listReviewsSince(db: Db, since: Date): ReviewLogRow[] {
     .all();
 }
 
+/**
+ * Recent recall accuracy for a module (fraction of the last `limit` reviews that
+ * were not "again"), or null when the module has no history yet. Feeds the
+ * difficulty controller (engine/difficulty.ts) for the next session.
+ */
+export function recentModuleAccuracy(db: Db, module: string, limit = 20): number | null {
+  const rows = db
+    .select({ rating: reviewLog.rating })
+    .from(reviewLog)
+    .innerJoin(cards, eq(reviewLog.cardId, cards.id))
+    .where(eq(cards.module, module))
+    .orderBy(desc(reviewLog.ts))
+    .limit(limit)
+    .all();
+  if (rows.length === 0) return null;
+  const hits = rows.filter((r) => r.rating !== 'again').length;
+  return hits / rows.length;
+}
+
 /** How many reviews a module has logged — drives the provisional-K schedule. */
 export function countModuleReviews(db: Db, module: string): number {
   const row = db
