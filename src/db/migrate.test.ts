@@ -47,7 +47,7 @@ describe('runMigrations', () => {
     );
   });
 
-  it('applies all three migrations in order and is idempotent (second run applies nothing new)', () => {
+  it('applies all migrations in order and is idempotent (second run applies nothing new)', () => {
     const tags = () =>
       (db.all(sql`SELECT tag FROM _migrations ORDER BY rowid`) as { tag: string }[]).map(
         (r) => r.tag,
@@ -58,6 +58,7 @@ describe('runMigrations', () => {
       '0000_known_mephisto',
       '0001_review_log_append_only',
       '0002_robust_arclight',
+      '0003_tranquil_guardsmen',
     ]);
   });
 

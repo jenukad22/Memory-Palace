@@ -1,4 +1,4 @@
-import { index, integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { index, integer, real, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core';
 
 export const cards = sqliteTable(
   'cards',
@@ -77,6 +77,37 @@ export const sessions = sqliteTable('sessions', {
   accuracy: real('accuracy').notNull().default(0),
 });
 
+// Structural scaffolding for the memory-palace trainer (modules/memory/SPEC.md).
+// Palaces/loci carry no FSRS/Elo/review history — those live on the placement
+// `cards` that reference a locus. Palaces soft-delete like cards; loci hard-
+// delete with position compaction, so the FK is never cascaded.
+export const palaces = sqliteTable('palaces', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+  isDeleted: integer('is_deleted', { mode: 'boolean' }).notNull().default(false),
+});
+
+// Ordered stops on a route. Ordering is DB-enforced: positions are contiguous
+// from 0 and UNIQUE within a palace — never array order in JSON.
+export const loci = sqliteTable(
+  'loci',
+  {
+    id: text('id').primaryKey(),
+    palaceId: text('palace_id')
+      .notNull()
+      .references(() => palaces.id),
+    position: integer('position').notNull(),
+    label: text('label').notNull(),
+    cue: text('cue'),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+  },
+  (t) => [
+    index('loci_palace_id_idx').on(t.palaceId),
+    unique('loci_palace_position_unq').on(t.palaceId, t.position),
+  ],
+);
+
 export type CardRow = typeof cards.$inferSelect;
 export type NewCardRow = typeof cards.$inferInsert;
 export type FsrsStateRow = typeof fsrsState.$inferSelect;
@@ -84,3 +115,7 @@ export type ReviewLogRow = typeof reviewLog.$inferSelect;
 export type AssessmentRow = typeof assessments.$inferSelect;
 export type AbilityRow = typeof abilityRatings.$inferSelect;
 export type SessionRow = typeof sessions.$inferSelect;
+export type PalaceRow = typeof palaces.$inferSelect;
+export type NewPalaceRow = typeof palaces.$inferInsert;
+export type LocusRow = typeof loci.$inferSelect;
+export type NewLocusRow = typeof loci.$inferInsert;

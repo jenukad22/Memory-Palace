@@ -31,4 +31,13 @@ export const MIGRATIONS: Migration[] = [
     tag: '0002_robust_arclight',
     statements: ['ALTER TABLE `assessments` ADD `payload` text;'],
   },
+  {
+    tag: '0003_tranquil_guardsmen',
+    statements: [
+      'CREATE TABLE `loci` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`palace_id` text NOT NULL,\n\t`position` integer NOT NULL,\n\t`label` text NOT NULL,\n\t`cue` text,\n\t`created_at` integer NOT NULL,\n\tFOREIGN KEY (`palace_id`) REFERENCES `palaces`(`id`) ON UPDATE no action ON DELETE no action\n);',
+      'CREATE INDEX `loci_palace_id_idx` ON `loci` (`palace_id`);',
+      'CREATE UNIQUE INDEX `loci_palace_position_unq` ON `loci` (`palace_id`,`position`);',
+      'CREATE TABLE `palaces` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`name` text NOT NULL,\n\t`created_at` integer NOT NULL,\n\t`is_deleted` integer DEFAULT false NOT NULL\n);',
+    ],
+  },
 ];

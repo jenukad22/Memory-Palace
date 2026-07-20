@@ -22,6 +22,13 @@
       "when": 1784489085737,
       "tag": "0002_robust_arclight",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1784508803055,
+      "tag": "0003_tranquil_guardsmen",
+      "breakpoints": true
     }
   ]
 }

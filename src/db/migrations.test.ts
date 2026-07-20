@@ -4,16 +4,16 @@ import { MIGRATIONS } from './migrations.generated';
 describe('migration bundle', () => {
   const allSql = MIGRATIONS.flatMap((m) => m.statements).join('\n');
 
-  it('has the initial schema, triggers, and payload-column migrations', () => {
-    expect(MIGRATIONS.length).toBe(3);
-    expect(MIGRATIONS.at(-1)?.tag).toBe('0002_robust_arclight');
+  it('has the initial schema, triggers, payload-column, and palace migrations', () => {
+    expect(MIGRATIONS.length).toBe(4);
+    expect(MIGRATIONS.at(-1)?.tag).toBe('0003_tranquil_guardsmen');
   });
 
   it('adds the assessments.payload column', () => {
     expect(allSql).toContain('ALTER TABLE `assessments` ADD `payload` text');
   });
 
-  it('creates all six tables', () => {
+  it('creates all eight tables', () => {
     for (const table of [
       'cards',
       'fsrs_state',
@@ -21,9 +21,15 @@ describe('migration bundle', () => {
       'assessments',
       'ability_ratings',
       'sessions',
+      'palaces',
+      'loci',
     ]) {
       expect(allSql).toContain(`CREATE TABLE \`${table}\``);
     }
+  });
+
+  it('enforces locus ordering with a composite unique index', () => {
+    expect(allSql).toContain('CREATE UNIQUE INDEX `loci_palace_position_unq`');
   });
 
   it('creates the append-only triggers', () => {
