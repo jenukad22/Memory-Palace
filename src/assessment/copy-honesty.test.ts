@@ -17,6 +17,7 @@ const HERE = fileURLToPath(new URL('.', import.meta.url)); // .../src/assessment
 const ROOT = join(HERE, '..', '..');
 const SCAN_DIRS = [
   { name: 'src/assessment', dir: HERE },
+  { name: 'src/modules', dir: join(ROOT, 'src', 'modules') },
   { name: 'app', dir: join(ROOT, 'app') },
 ];
 
