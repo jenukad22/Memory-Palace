@@ -6,6 +6,8 @@ export { newId } from './id';
 export { runMigrations } from './migrate';
 export * from './queries/cards';
 export * from './queries/reviews';
+export * from './queries/palaces';
+export * from './queries/pao';
 export * from './queries/assessments';
 export * from './queries/vviq';
 export * from './queries/ability';

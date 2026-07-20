@@ -1,8 +1,10 @@
-import { desc, eq, gte } from 'drizzle-orm';
-import type { ReviewRating } from '@/engine';
+import { count, desc, eq, gte } from 'drizzle-orm';
+import { ELO_MIDPOINT, gradeReview, type GradedReview, type ReviewRating } from '@/engine';
 import { newId } from '../id';
-import { reviewLog, type ReviewLogRow } from '../schema';
+import { cards, reviewLog, type ReviewLogRow } from '../schema';
 import type { Db } from '../types';
+import { getFsrsState, upsertFsrsState } from './cards';
+import { getAbility, upsertAbility } from './ability';
 
 export interface NewReviewInput {
   cardId: string;
@@ -47,4 +49,64 @@ export function listReviewsSince(db: Db, since: Date): ReviewLogRow[] {
     .where(gte(reviewLog.ts, since))
     .orderBy(desc(reviewLog.ts))
     .all();
+}
+
+/** How many reviews a module has logged — drives the provisional-K schedule. */
+export function countModuleReviews(db: Db, module: string): number {
+  const row = db
+    .select({ n: count() })
+    .from(reviewLog)
+    .innerJoin(cards, eq(reviewLog.cardId, cards.id))
+    .where(eq(cards.module, module))
+    .get();
+  return row?.n ?? 0;
+}
+
+export interface RecordReviewInput {
+  cardId: string;
+  /** The card's module, for the ability-Elo and rated-item count. */
+  module: string;
+  rating: ReviewRating;
+  /** Retrieval latency in ms; defaults to 0 when the drill does not measure it. */
+  elapsedMs?: number;
+  now?: Date;
+}
+
+/**
+ * The single write path for a review (SPEC.md §2): read the card's FSRS state +
+ * the module's Elo and rated-item count, grade it with the pure engine, then
+ * advance FSRS, update the module Elo, and append one review_log row — all in
+ * one transaction. A module with no ability row yet starts from the Elo
+ * midpoint. Throws if the card has no FSRS state (it was never created).
+ */
+export function recordReview(db: Db, input: RecordReviewInput): GradedReview {
+  const cardState = getFsrsState(db, input.cardId);
+  if (!cardState) throw new Error(`no FSRS state for card ${input.cardId}`);
+  const now = input.now ?? new Date();
+  const moduleElo = getAbility(db, input.module)?.elo ?? ELO_MIDPOINT;
+  const ratedItemCount = countModuleReviews(db, input.module);
+
+  const graded = gradeReview({
+    cardState,
+    moduleElo,
+    ratedItemCount,
+    rating: input.rating,
+    now,
+    elapsedMs: input.elapsedMs ?? 0,
+  });
+
+  db.transaction((tx) => {
+    upsertFsrsState(tx, input.cardId, graded.nextCardState);
+    upsertAbility(tx, input.module, graded.nextModuleElo, now);
+    appendReview(tx, {
+      cardId: input.cardId,
+      rating: graded.log.rating,
+      elapsedMs: graded.log.elapsedMs,
+      difficulty: graded.log.difficulty,
+      stability: graded.log.stability,
+      retrievability: graded.log.retrievability,
+      ts: now,
+    });
+  });
+  return graded;
 }
