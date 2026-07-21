@@ -14,6 +14,7 @@ interface IdbRequest<T> {
 }
 interface IdbOpenRequest extends IdbRequest<IdbDatabase> {
   onupgradeneeded: (() => void) | null;
+  onblocked: (() => void) | null;
 }
 interface IdbObjectStore {
   get(key: string): IdbRequest<unknown>;
@@ -41,12 +42,65 @@ const STORE = 'sqlite';
 const KEY = 'db';
 const SAVE_DEBOUNCE_MS = 500;
 
-function openIdb(): Promise<IdbDatabase> {
+/**
+ * How long to wait for indexedDB.open() before giving up. The silent hang is
+ * the actual failure mode this guards against, not any one specific cause —
+ * `onblocked` (another connection holding an older version) is the known
+ * culprit, but the timeout is a backstop against any stall, known or not: it
+ * always turns "the app never renders" into a caught rejection DbProvider can
+ * show the user.
+ */
+export const IDB_OPEN_TIMEOUT_MS = 10_000;
+
+/** Exported for tests — not part of the module's public persistence API. */
+export function openIdb(): Promise<IdbDatabase> {
   return new Promise((resolve, reject) => {
+    let settled = false;
+    let sawUpgrade = false;
+    let sawBlocked = false;
+
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      reject(
+        new Error(
+          `IndexedDB open timed out after ${IDB_OPEN_TIMEOUT_MS}ms` +
+            (sawBlocked ? ' — blocked by another connection that never released it' : ''),
+        ),
+      );
+    }, IDB_OPEN_TIMEOUT_MS);
+
     const req = indexedDB.open(DB_NAME, 1);
-    req.onupgradeneeded = () => req.result.createObjectStore(STORE);
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
+
+    req.onupgradeneeded = () => {
+      sawUpgrade = true;
+      req.result.createObjectStore(STORE);
+    };
+
+    // A blocked open can still succeed once the blocking connection closes —
+    // don't reject here; the timeout above is the backstop if it never does.
+    req.onblocked = () => {
+      sawBlocked = true;
+    };
+
+    req.onsuccess = () => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      // __DEV__ is a real global under Metro; absent under plain Node/Vitest.
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        const path = sawBlocked ? 'blocked-then-recovered' : sawUpgrade ? 'upgrade' : 'fresh open';
+        console.log(`[db] IndexedDB opened (${path})`);
+      }
+      resolve(req.result);
+    };
+
+    req.onerror = () => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      reject(req.error ?? new Error('IndexedDB open failed'));
+    };
   });
 }
 
