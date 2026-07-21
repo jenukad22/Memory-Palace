@@ -9,4 +9,5 @@ export { DigitKeypad, type DigitKeypadProps } from './DigitKeypad';
 export { CorsiBoard, CORSI_BLOCKS, type CorsiBoardProps } from './CorsiBoard';
 export { BatteryProgress, type BatteryProgressProps } from './BatteryProgress';
 export { CheckpointSheet, type CheckpointSheetProps } from './CheckpointSheet';
+export { GradeButtons, type GradeButtonsProps } from './GradeButtons';
 export { ScreenShell, type ScreenShellProps } from './ScreenShell';

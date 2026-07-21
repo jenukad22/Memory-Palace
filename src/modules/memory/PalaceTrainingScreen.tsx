@@ -12,7 +12,7 @@ import {
   type PlacementView,
 } from '@/db';
 import { makeRng, recallOrder, type MemoryStrategy, type ReviewRating } from '@/engine';
-import { AppText, Button, Card, ScreenShell, color, space } from '@/ui';
+import { AppText, Button, Card, GradeButtons, ScreenShell, color, space } from '@/ui';
 import { RECALL_PROMPT, encodingCopy } from './copy';
 import { palaceListLength, sessionDifficulty } from './difficulty';
 
@@ -45,14 +45,6 @@ type Phase = 'intro' | 'encode' | 'recall' | 'done';
 function freshSeed(): number {
   return (Date.now() ^ 0x9e3779b9) >>> 0;
 }
-
-/** Grade buttons map a self-report onto the FSRS ratings; "Missed" is a failed retrieval. */
-const GRADES: { label: string; rating: ReviewRating }[] = [
-  { label: 'Missed', rating: 'again' },
-  { label: 'Hard', rating: 'hard' },
-  { label: 'Good', rating: 'good' },
-  { label: 'Easy', rating: 'easy' },
-];
 
 export function PalaceTrainingScreen() {
   const db = useDb();
@@ -177,18 +169,7 @@ export function PalaceTrainingScreen() {
               <AppText variant="caption" color="textSecondary">
                 How did that retrieval go?
               </AppText>
-              <View style={{ flexDirection: 'row', gap: space.sp2 }}>
-                {GRADES.map((g) => (
-                  <View key={g.rating} style={{ flex: 1 }}>
-                    <Button
-                      kind="secondary"
-                      size="sm"
-                      label={g.label}
-                      onPress={() => grade(g.rating)}
-                    />
-                  </View>
-                ))}
-              </View>
+              <GradeButtons onGrade={grade} />
             </View>
           ) : null}
         </View>

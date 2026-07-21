@@ -2,7 +2,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { doneSet, nextRoute } from '@/assessment/battery';
-import { getAbility, listAssessments, useDb, type AssessmentRow } from '@/db';
+import { getAbility, listAssessments, listDueCards, useDb, type AssessmentRow } from '@/db';
 import { AppText, Button, Card, ScreenShell, space } from '@/ui';
 
 // Dashboard. Everything shown is task- or module-specific output — a span, a
@@ -12,11 +12,13 @@ export default function Dashboard() {
   const router = useRouter();
   const [rows, setRows] = useState<AssessmentRow[]>([]);
   const [memoryElo, setMemoryElo] = useState<number | null>(null);
+  const [dueCount, setDueCount] = useState(0);
 
   useFocusEffect(
     useCallback(() => {
       setRows(listAssessments(db));
       setMemoryElo(getAbility(db, 'memory')?.elo ?? null);
+      setDueCount(listDueCards(db).length);
     }, [db]),
   );
 
@@ -53,6 +55,12 @@ export default function Dashboard() {
         )}
 
         <Button kind="secondary" label="Training modules" onPress={() => router.push('/modules')} />
+
+        <Button
+          kind="secondary"
+          label={dueCount > 0 ? `Daily review · ${dueCount} due` : 'Daily review'}
+          onPress={() => router.push('/review')}
+        />
 
         {__DEV__ ? (
           <Button kind="ghost" label="Developer tools" onPress={() => router.push('/dev')} />

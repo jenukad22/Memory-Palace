@@ -21,7 +21,7 @@ import {
   type ReviewRating,
   type Rng,
 } from '@/engine';
-import { AppText, Button, Card, ScreenShell, color, space } from '@/ui';
+import { AppText, Button, Card, GradeButtons, ScreenShell, color, space } from '@/ui';
 import { PAO_RECALL_PROMPT, encodingCopy } from './copy';
 import { paoDrillParams, sessionDifficulty } from './difficulty';
 
@@ -33,13 +33,6 @@ function freshSeed(): number {
 }
 
 type Phase = 'intro' | 'expose' | 'recall' | 'done';
-
-const GRADES: { label: string; rating: ReviewRating }[] = [
-  { label: 'Missed', rating: 'again' },
-  { label: 'Hard', rating: 'hard' },
-  { label: 'Good', rating: 'good' },
-  { label: 'Easy', rating: 'easy' },
-];
 
 /** Build one 6-digit number from three authored numbers (pairs), preserving leading zeros. */
 function makeNumber(pool: readonly number[], rng: Rng): string {
@@ -191,18 +184,7 @@ export function PaoDrillScreen() {
               <AppText variant="caption" color="textSecondary">
                 How did that retrieval go?
               </AppText>
-              <View style={{ flexDirection: 'row', gap: space.sp2 }}>
-                {GRADES.map((g) => (
-                  <View key={g.rating} style={{ flex: 1 }}>
-                    <Button
-                      kind="secondary"
-                      size="sm"
-                      label={g.label}
-                      onPress={() => grade(g.rating)}
-                    />
-                  </View>
-                ))}
-              </View>
+              <GradeButtons onGrade={grade} />
             </View>
           ) : null}
         </View>

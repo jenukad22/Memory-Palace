@@ -18,6 +18,7 @@ export default defineConfig({
       'src/ui/**/*.test.ts',
       'src/assessment/**/*.test.ts',
       'src/modules/**/*.test.ts',
+      'src/review/**/*.test.ts',
     ],
     coverage: {
       provider: 'v8',
@@ -27,6 +28,7 @@ export default defineConfig({
         'src/ui/**/*.ts',
         'src/assessment/**/*.ts',
         'src/modules/**/*.ts',
+        'src/review/**/*.ts',
       ],
       exclude: [
         'src/engine/**/*.test.ts',
@@ -34,6 +36,7 @@ export default defineConfig({
         'src/ui/**/*.test.ts',
         'src/assessment/**/*.test.ts',
         'src/modules/**/*.test.ts',
+        'src/review/**/*.test.ts',
         'src/db/migrations.generated.ts',
       ],
     },
