@@ -1,4 +1,4 @@
-import { count, desc, eq, gte } from 'drizzle-orm';
+import { and, count, desc, eq, gte } from 'drizzle-orm';
 import { ELO_MIDPOINT, gradeReview, type GradedReview, type ReviewRating } from '@/engine';
 import { newId } from '../id';
 import { cards, reviewLog, type ReviewLogRow } from '../schema';
@@ -68,6 +68,26 @@ export function recentModuleAccuracy(db: Db, module: string, limit = 20): number
   if (rows.length === 0) return null;
   const hits = rows.filter((r) => r.rating !== 'again').length;
   return hits / rows.length;
+}
+
+export interface ModuleReviewStats {
+  count: number;
+  hits: number;
+}
+
+/**
+ * How many reviews a module logged since `since`, and how many were not
+ * "again" — feeds the campaign day-completion threshold (modules/memory/
+ * SPEC.md sec 7.4), which needs a plain count, not a rolling-window accuracy.
+ */
+export function moduleReviewStatsSince(db: Db, module: string, since: Date): ModuleReviewStats {
+  const rows = db
+    .select({ rating: reviewLog.rating })
+    .from(reviewLog)
+    .innerJoin(cards, eq(reviewLog.cardId, cards.id))
+    .where(and(eq(cards.module, module), gte(reviewLog.ts, since)))
+    .all();
+  return { count: rows.length, hits: rows.filter((r) => r.rating !== 'again').length };
 }
 
 /** How many reviews a module has logged — drives the provisional-K schedule. */

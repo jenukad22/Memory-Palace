@@ -3,7 +3,12 @@ import { createEmptyCardState, schedule, type ReviewRating } from '@/engine';
 import { createTestDb } from '../testing';
 import type { Db } from '../types';
 import { createCard } from './cards';
-import { appendReview, listReviewsByCard, listReviewsSince } from './reviews';
+import {
+  appendReview,
+  listReviewsByCard,
+  listReviewsSince,
+  moduleReviewStatsSince,
+} from './reviews';
 
 const RATINGS: ReviewRating[] = ['again', 'hard', 'good', 'easy'];
 
@@ -73,5 +78,37 @@ describe('review queries', () => {
     });
     const since = listReviewsSince(db, new Date('2026-07-15T00:00:00Z'));
     expect(since.map((r) => r.rating)).toEqual(['easy']);
+  });
+
+  it("moduleReviewStatsSince counts a module's reviews and hits since a timestamp", () => {
+    createCard(db, { id: 'other', module: 'pao', front: 'f', back: 'b' });
+    const base = { elapsedMs: 1, difficulty: 5, stability: 1, retrievability: 0.9 };
+    appendReview(db, {
+      cardId: 'c1',
+      rating: 'good',
+      ts: new Date('2026-07-10T00:00:00Z'),
+      ...base,
+    });
+    appendReview(db, {
+      cardId: 'c1',
+      rating: 'again',
+      ts: new Date('2026-07-20T00:00:00Z'),
+      ...base,
+    });
+    appendReview(db, {
+      cardId: 'c1',
+      rating: 'easy',
+      ts: new Date('2026-07-21T00:00:00Z'),
+      ...base,
+    });
+    appendReview(db, {
+      cardId: 'other',
+      rating: 'good',
+      ts: new Date('2026-07-21T00:00:00Z'),
+      ...base,
+    });
+
+    const stats = moduleReviewStatsSince(db, 'memory', new Date('2026-07-15T00:00:00Z'));
+    expect(stats).toEqual({ count: 2, hits: 1 });
   });
 });

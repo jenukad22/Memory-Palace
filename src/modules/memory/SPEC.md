@@ -118,8 +118,92 @@ and never labels the user or implies a deficit.
 - `engine/pao.ts`, `engine/palace.ts`, `engine/review.ts` — pure, Vitest-covered.
 - `db/queries/palaces.ts`, `db/queries/pao.ts`, `recordReview` — persistence.
 - `modules/memory/*` — screens (palace builder/training, PAO builder/drill),
-a Zustand session store, TanStack Query hooks, route copy. Route entry wired
-from `app/modules/[module].tsx` for `memory`.
+  a Zustand session store, TanStack Query hooks, route copy. Route entry wired
+  from `app/modules/[module].tsx` for `memory`.
+
+## 7. Six-week campaign (method-of-loci protocol)
+
+A guided program modeled on the published method-of-loci training design (Dresler
+et al. 2017): daily route-encoding practice for six weeks, bracketed by a free-recall
+test taken before training and again after, so the user sees their own change on
+one task. **We implement the published paradigm, not proprietary content** — same
+constraint as §0 of the baseline SPEC: our own word bank, our own generated lists.
+
+### 7.1 Scope: palace only, not PAO
+
+The source protocol trains **method of loci for word lists** only — it does not
+train digit/PAO compression, and the outcome measure (free recall of a word list)
+is exactly what `PalaceTrainingScreen` already produces cards for. Folding PAO into
+the daily plan would add an authoring gate (100 P/A/O entries) that has nothing to
+do with what pretest/posttest measure. The campaign therefore reuses
+`PalaceTrainingScreen`/`palaceListLength` as its only daily drill; PAO is untouched.
+
+### 7.2 Setup gate
+
+Day 1 cannot start until the user has **at least one palace with ≥ 10 loci**
+(`MIN_LOCI_TO_START`, `engine/campaign.ts`). Across multiple palaces, the campaign
+always trains the one with the most loci (`bestPalaceForCampaign`) — no
+palace-picker UI. This is a real, low floor: it exists only so the day-1 drill has
+enough stops to be worth a session, not to gate-keep.
+
+### 7.3 Free-recall pre/post test
+
+`assessment/freerecall/FreeRecallScreen` administers a generic free-recall
+paradigm: a word list is shown one word at a time (study), then the user free-types
+every word they remember, in any order (recall). `engine/assessment/wordBank.ts`
+holds an original pool of concrete nouns (ours, not a copyrighted instrument);
+`sampleWordList` draws a `FREE_RECALL_LIST_LENGTH` (72) word list per test.
+**Pretest and posttest draw disjoint lists** (posttest excludes every pretest word)
+so a higher posttest score reflects the trained technique, not item familiarity
+from the same list. Both write to `assessments`: `instrument` = `freerecall_pre` /
+`freerecall_post`, `rawScore` = words recalled (0–72), `payload` = the list and the
+raw recall attempt (SPEC.md sec 12 precedent).
+
+### 7.4 Daily loop and day-completion (stored in `sessions`, no new tables)
+
+No new schema. One row in the existing `sessions` table, `module = 'campaign'`,
+represents one completed campaign day; **day count = number of such rows**
+(`countCampaignDaysCompleted` = `listSessions(db, 'campaign').length`), and
+**week = `campaignWeekForDay(day)`** = `ceil(day / 7)` over `CAMPAIGN_TOTAL_DAYS`
+(42) days / `CAMPAIGN_WEEKS` (6).
+
+A day has no dedicated "start/finish drill" screen wrapping `PalaceTrainingScreen`
+— that would require threading completion callbacks through an already-tested
+screen. Instead, day-completion is **derived from `review_log` the user already
+produces**: once at least `MIN_REVIEWS_PER_CAMPAIGN_DAY` (15) `memory`-module
+reviews have been logged on the current calendar day (`moduleReviewStatsSince`,
+`startOfLocalDay`/`isSameLocalDay` in `engine/campaign.ts`), the campaign hub's
+"Finish today's session" action becomes available. Pressing it inserts one
+`sessions` row for today with `items`/`accuracy` computed from **today's actual
+review stats** (not a fabricated duration — `started`/`ended` are both `now`,
+since no real elapsed-time instrumentation exists; we do not claim a duration we
+did not measure). At most one campaign-day row per calendar day
+(`hasCampaignSessionToday` gates the button) — this is what turns "42 rounds" into
+"six weeks," not a fixed daily unlock. 15 reviews approximates the low end of a
+20–40 min session across a few escalating-difficulty rounds; it is a plain,
+documented threshold, not a claim about actual elapsed minutes.
+
+### 7.5 Results: before/after delta
+
+Once `daysCompleted >= CAMPAIGN_TOTAL_DAYS`, the hub offers the posttest; once both
+`freerecall_pre` and `freerecall_post` rows exist, `CampaignResultsScreen` reports
+**"Words recalled: {pre} → {post}"** and the plain difference — task-specific,
+same units both sides, no normalization, no IQ/general-ability framing. If the
+delta is flat or negative, it is reported exactly as measured; the copy never
+spins a non-improvement.
+
+### 7.6 Layer map (additions)
+
+- `engine/assessment/wordBank.ts`, `engine/assessment/freeRecall.ts` — pure,
+  Vitest-covered (sampling, scoring).
+- `engine/campaign.ts` — pure day/week math, setup gate, calendar-day helpers.
+- `db/queries/campaign.ts` — pretest/posttest lookup, day-count, best-palace,
+  `recordCampaignDay`. `db/queries/reviews.ts` gains `moduleReviewStatsSince`.
+- `assessment/freerecall/FreeRecallScreen.tsx` — generic; campaign supplies the
+  instrument name and a completion callback.
+- `modules/memory/CampaignScreen.tsx` (hub), `CampaignResultsScreen.tsx` (delta).
+Routed under `app/campaign/*`; linked from the memory hub, not the dashboard —
+this is a memory-domain program, not a cross-module feature like daily review.
 </content>
 
 </invoke>

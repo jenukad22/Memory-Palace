@@ -5,3 +5,4 @@ export * from './assessment';
 export * from './pao';
 export * from './palace';
 export * from './review';
+export * from './campaign';

@@ -9,6 +9,7 @@ export * from './queries/reviews';
 export * from './queries/palaces';
 export * from './queries/pao';
 export * from './queries/due';
+export * from './queries/campaign';
 export * from './queries/assessments';
 export * from './queries/vviq';
 export * from './queries/ability';

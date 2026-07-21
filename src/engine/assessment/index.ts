@@ -3,3 +3,5 @@ export * from './scoring';
 export * from './normalize';
 export * from './seedElo';
 export * from './timing';
+export * from './wordBank';
+export * from './freeRecall';

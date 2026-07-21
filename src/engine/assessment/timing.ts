@@ -11,3 +11,7 @@ export const CORSI_GAP_MS = 250;
 
 /** Lead-in pause before the first stimulus of a trial (screens' settle time). */
 export const TRIAL_LEAD_IN_MS = 500;
+
+/** Free-recall study pace (modules/memory/SPEC.md sec 7.3): ~1 word per 3.2s. */
+export const FREE_RECALL_WORD_ON_MS = 3000;
+export const FREE_RECALL_GAP_MS = 200;
