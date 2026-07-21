@@ -19,6 +19,7 @@ export default defineConfig({
       'src/assessment/**/*.test.ts',
       'src/modules/**/*.test.ts',
       'src/review/**/*.test.ts',
+      'src/integration/**/*.test.ts',
     ],
     coverage: {
       provider: 'v8',
