@@ -37,6 +37,14 @@ export default function MemoryHub() {
             />
           </View>
         </Card>
+        <Card>
+          <AppText variant="bodyStrong">6-week campaign</AppText>
+          <AppText variant="secondary" color="textSecondary" style={{ paddingVertical: space.sp2 }}>
+            A guided method-of-loci program: a 72-word recall test, six weeks of daily route
+            practice, then the same test again to see your own before/after change.
+          </AppText>
+          <Button label="Open campaign" onPress={() => router.push('/campaign')} />
+        </Card>
       </View>
     </ScreenShell>
   );
