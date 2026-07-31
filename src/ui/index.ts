@@ -18,3 +18,18 @@ export { BatteryProgress, type BatteryProgressProps } from './BatteryProgress';
 export { CheckpointSheet, type CheckpointSheetProps } from './CheckpointSheet';
 export { GradeButtons, type GradeButtonsProps } from './GradeButtons';
 export { ScreenShell, type ScreenShellProps } from './ScreenShell';
+export { ComingSoonTag } from './ComingSoonTag';
+export { LineChart, type LineChartProps } from './LineChart';
+export { StreakStrip, type StreakStripProps } from './StreakStrip';
+export {
+  BaselineTrendCard,
+  type BaselineSeries,
+  type BaselineTrendCardProps,
+} from './BaselineTrendCard';
+export {
+  makeChartScale,
+  linePath,
+  type ChartPoint,
+  type ChartScale,
+  type ChartLayout,
+} from './chartGeometry';

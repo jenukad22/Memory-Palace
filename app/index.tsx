@@ -58,6 +58,12 @@ export default function Dashboard() {
 
         <Button
           kind="secondary"
+          label="Progress dashboard"
+          onPress={() => router.push('/progress')}
+        />
+
+        <Button
+          kind="secondary"
           label={dueCount > 0 ? `Daily review · ${dueCount} due` : 'Daily review'}
           onPress={() => router.push('/review')}
         />

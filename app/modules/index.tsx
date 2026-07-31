@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { View } from 'react-native';
-import { AppText, Button, Card, ScreenShell, color, radius, space } from '@/ui';
+import { AppText, Button, Card, ComingSoonTag, ScreenShell, space } from '@/ui';
 
 // Training hub — one card per cognitive domain (/src/modules). Memory is live;
 // Attention and Reasoning are later phases, shown as not-yet-available rather
@@ -30,24 +30,6 @@ const DOMAINS: readonly Domain[] = [
     blurb: 'Pattern and relational reasoning tasks.',
   },
 ];
-
-function ComingSoonTag() {
-  return (
-    <View
-      style={{
-        alignSelf: 'flex-start',
-        backgroundColor: color.surface2,
-        borderRadius: radius.sm,
-        paddingHorizontal: space.sp2,
-        paddingVertical: space.sp1,
-      }}
-    >
-      <AppText variant="overline" color="textMuted">
-        Not yet available
-      </AppText>
-    </View>
-  );
-}
 
 export default function ModulesIndex() {
   const router = useRouter();

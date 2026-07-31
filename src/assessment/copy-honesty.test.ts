@@ -19,6 +19,7 @@ const SCAN_DIRS = [
   { name: 'src/assessment', dir: HERE },
   { name: 'src/modules', dir: join(ROOT, 'src', 'modules') },
   { name: 'src/review', dir: join(ROOT, 'src', 'review') },
+  { name: 'src/dashboard', dir: join(ROOT, 'src', 'dashboard') },
   { name: 'app', dir: join(ROOT, 'app') },
 ];
 
