@@ -6,7 +6,14 @@ export { InputField, type InputFieldProps } from './InputField';
 export { LikertScale, type LikertOption, type LikertScaleProps } from './LikertScale';
 export { DigitSlots, type DigitSlotsProps } from './DigitSlots';
 export { DigitKeypad, type DigitKeypadProps } from './DigitKeypad';
-export { CorsiBoard, CORSI_BLOCKS, type CorsiBoardProps } from './CorsiBoard';
+export { CorsiBoard, type CorsiBoardProps } from './CorsiBoard';
+export {
+  CORSI_BLOCKS,
+  CORSI_BLOCK_SIZE,
+  CORSI_MAX_SIDE,
+  corsiBoardSide,
+  type NormalizedBlock,
+} from './corsiLayout';
 export { BatteryProgress, type BatteryProgressProps } from './BatteryProgress';
 export { CheckpointSheet, type CheckpointSheetProps } from './CheckpointSheet';
 export { GradeButtons, type GradeButtonsProps } from './GradeButtons';

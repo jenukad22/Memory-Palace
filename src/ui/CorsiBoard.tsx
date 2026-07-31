@@ -1,22 +1,8 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, View, type ViewStyle } from 'react-native';
+import { Pressable, View, type LayoutChangeEvent, type ViewStyle } from 'react-native';
+import { CORSI_BLOCK_SIZE, CORSI_BLOCKS, corsiBoardSide } from './corsiLayout';
 import { color, motion, radius } from './tokens';
-
-/** Fixed normalized top-left coordinates of the 9 blocks (DESIGN.md sec 2.7). */
-export const CORSI_BLOCKS: readonly { x: number; y: number }[] = [
-  { x: 0.06, y: 0.58 },
-  { x: 0.26, y: 0.12 },
-  { x: 0.28, y: 0.76 },
-  { x: 0.42, y: 0.4 },
-  { x: 0.55, y: 0.06 },
-  { x: 0.6, y: 0.68 },
-  { x: 0.72, y: 0.3 },
-  { x: 0.82, y: 0.56 },
-  { x: 0.06, y: 0.26 },
-];
-
-const BLOCK_SIZE = 0.18;
 
 export interface CorsiBoardProps {
   /** display = watch the sequence (taps ignored, no visual change); recall = tap back. */
@@ -38,6 +24,7 @@ export interface CorsiBoardProps {
  */
 export function CorsiBoard({ phase, highlightIndex, onTapBlock }: CorsiBoardProps) {
   const [flashIndex, setFlashIndex] = useState<number | null>(null);
+  const [side, setSide] = useState(0);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(
     () => () => {
@@ -45,6 +32,11 @@ export function CorsiBoard({ phase, highlightIndex, onTapBlock }: CorsiBoardProp
     },
     [],
   );
+
+  const onLayout = (e: LayoutChangeEvent) => {
+    const { width, height } = e.nativeEvent.layout;
+    setSide(corsiBoardSide(width, height));
+  };
 
   const press = (i: number) => {
     if (phase !== 'recall') return;
@@ -54,66 +46,74 @@ export function CorsiBoard({ phase, highlightIndex, onTapBlock }: CorsiBoardProp
     onTapBlock(i);
   };
 
+  // The board fills the region it's given, then centers a bounded square inside
+  // it (corsiBoardSide) so all 9 blocks stay on-screen and tappable at any width
+  // — an unbounded aspect-ratio square overflows wide desktop viewports.
   return (
     <View
-      style={{ width: '100%', aspectRatio: 1 }}
+      onLayout={onLayout}
+      style={{ flex: 1, width: '100%', alignItems: 'center', justifyContent: 'center' }}
       pointerEvents={phase === 'display' ? 'none' : 'auto'}
     >
-      {CORSI_BLOCKS.map((pos, i) => {
-        const lit = highlightIndex === i;
-        const flashed = flashIndex === i;
+      <View style={{ width: side, height: side }}>
+        {side > 0
+          ? CORSI_BLOCKS.map((pos, i) => {
+              const lit = highlightIndex === i;
+              const flashed = flashIndex === i;
 
-        const frame: ViewStyle = {
-          position: 'absolute',
-          left: `${pos.x * 100}%`,
-          top: `${pos.y * 100}%`,
-          width: `${BLOCK_SIZE * 100}%`,
-          height: `${BLOCK_SIZE * 100}%`,
-          borderRadius: radius.sm,
-          borderWidth: 1,
-          borderColor: lit ? color.accent : flashed ? color.accent : color.lineStrong,
-          overflow: 'hidden',
-          transform: flashed ? [{ translateY: 1 }] : [],
-          ...(lit
-            ? {
-                shadowColor: color.accent,
-                shadowOpacity: 0.45,
-                shadowRadius: 18,
-                shadowOffset: { width: 0, height: 0 },
-                elevation: 8,
-              }
-            : {
-                shadowColor: '#000',
-                shadowOpacity: 0.35,
-                shadowRadius: 3,
-                shadowOffset: { width: 0, height: 2 },
-                elevation: 3,
-              }),
-        };
+              const frame: ViewStyle = {
+                position: 'absolute',
+                left: `${pos.x * 100}%`,
+                top: `${pos.y * 100}%`,
+                width: `${CORSI_BLOCK_SIZE * 100}%`,
+                height: `${CORSI_BLOCK_SIZE * 100}%`,
+                borderRadius: radius.sm,
+                borderWidth: 1,
+                borderColor: lit ? color.accent : flashed ? color.accent : color.lineStrong,
+                overflow: 'hidden',
+                transform: flashed ? [{ translateY: 1 }] : [],
+                ...(lit
+                  ? {
+                      shadowColor: color.accent,
+                      shadowOpacity: 0.45,
+                      shadowRadius: 18,
+                      shadowOffset: { width: 0, height: 0 },
+                      elevation: 8,
+                    }
+                  : {
+                      shadowColor: '#000',
+                      shadowOpacity: 0.35,
+                      shadowRadius: 3,
+                      shadowOffset: { width: 0, height: 2 },
+                      elevation: 3,
+                    }),
+              };
 
-        const faces: readonly [string, string] = lit
-          ? [color.accent, color.accent]
-          : flashed
-            ? [color.corsiKeyBottom, color.corsiKeyBottom]
-            : [color.corsiKeyTop, color.corsiKeyBottom];
+              const faces: readonly [string, string] = lit
+                ? [color.accent, color.accent]
+                : flashed
+                  ? [color.corsiKeyBottom, color.corsiKeyBottom]
+                  : [color.corsiKeyTop, color.corsiKeyBottom];
 
-        return (
-          <Pressable
-            key={i}
-            accessibilityRole="button"
-            accessibilityLabel={`block ${i + 1}`}
-            onPress={() => press(i)}
-            style={frame}
-          >
-            <LinearGradient colors={faces} style={{ flex: 1 }}>
-              {/* top light — the key's lit edge */}
-              {lit ? null : (
-                <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.05)' }} />
-              )}
-            </LinearGradient>
-          </Pressable>
-        );
-      })}
+              return (
+                <Pressable
+                  key={i}
+                  accessibilityRole="button"
+                  accessibilityLabel={`block ${i + 1}`}
+                  onPress={() => press(i)}
+                  style={frame}
+                >
+                  <LinearGradient colors={faces} style={{ flex: 1 }}>
+                    {/* top light — the key's lit edge */}
+                    {lit ? null : (
+                      <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.05)' }} />
+                    )}
+                  </LinearGradient>
+                </Pressable>
+              );
+            })
+          : null}
+      </View>
     </View>
   );
 }

@@ -163,7 +163,9 @@ export function CorsiScreen() {
       ) : null}
 
       {phase === 'display' || phase === 'recall' ? (
-        <View style={{ gap: space.sp4, paddingTop: space.sp4 }}>
+        // flex:1 column so the board gets a bounded region to size itself into
+        // (min of leftover width/height) — captions and dot row stay fixed.
+        <View style={{ flex: 1, gap: space.sp4, paddingTop: space.sp4 }}>
           <AppText variant="caption" color="textSecondary" style={{ textAlign: 'center' }}>
             {phase === 'display'
               ? 'Watch'
