@@ -1,8 +1,8 @@
 /**
  * Six-week method-of-loci campaign (modules/memory/SPEC.md §7) — pure day/week
- * math, the setup gate, and calendar-day helpers. No FSRS/Elo of its own: the
- * daily drill is the existing palace trainer: this module only decides when a
- * day counts as done and what week it falls in.
+ * math and the setup gate. No FSRS/Elo of its own: the daily drill is the
+ * existing palace trainer: this module only decides when a day counts as done
+ * and what week it falls in. Calendar-day helpers live in ./calendarDay.
  */
 
 export const CAMPAIGN_TOTAL_DAYS = 42;
@@ -51,14 +51,4 @@ export function setupReady(bestPalaceLociCount: number): boolean {
 /** Whether today's review count clears the day-completion threshold (SPEC.md §7.4). */
 export function dayThresholdMet(reviewsToday: number): boolean {
   return reviewsToday >= MIN_REVIEWS_PER_CAMPAIGN_DAY;
-}
-
-/** Local midnight for the given instant — the calendar-day boundary this module uses throughout. */
-export function startOfLocalDay(now: Date): Date {
-  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
-}
-
-/** Whether two instants fall on the same local calendar day. */
-export function isSameLocalDay(a: Date, b: Date): boolean {
-  return startOfLocalDay(a).getTime() === startOfLocalDay(b).getTime();
 }

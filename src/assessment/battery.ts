@@ -75,6 +75,40 @@ export function checkpointCopy(done: Set<string>): CheckpointCopy {
   };
 }
 
+/**
+ * Groups the five raw assessments.instrument keys into the three user-facing
+ * baseline tasks (SPEC.md sec 1) — a retake re-runs one whole task, matching
+ * how VviqScreen/DigitSpanScreen/CorsiScreen already run forward+backward as
+ * one flow, not per raw instrument key.
+ */
+export interface BaselineTask {
+  key: 'vviq' | 'digitspan' | 'corsi';
+  label: string;
+  instruments: readonly string[];
+  retakeRoute: string;
+}
+
+export const BASELINE_TASKS: readonly BaselineTask[] = [
+  {
+    key: 'vviq',
+    label: 'Imagery',
+    instruments: ['vviq'],
+    retakeRoute: '/modules/memory/retake-vviq',
+  },
+  {
+    key: 'digitspan',
+    label: 'Digit span',
+    instruments: ['digitspan_forward', 'digitspan_backward'],
+    retakeRoute: '/modules/memory/retake-digitspan',
+  },
+  {
+    key: 'corsi',
+    label: 'Corsi blocks',
+    instruments: ['corsi_forward', 'corsi_backward'],
+    retakeRoute: '/modules/memory/retake-corsi',
+  },
+] as const;
+
 export interface SpanTrialLogEntry {
   length: number;
   passed: boolean;

@@ -75,3 +75,24 @@ export function upsertFsrsState(db: Db, cardId: string, state: CardState): void 
     .onConflictDoUpdate({ target: fsrsState.cardId, set: { ...state } })
     .run();
 }
+
+/** Every non-deleted card's FSRS state for one module — feeds the retention curve. */
+export function listFsrsStatesByModule(db: Db, module: string): CardState[] {
+  const rows = db
+    .select({ fsrs: fsrsState })
+    .from(fsrsState)
+    .innerJoin(cards, eq(fsrsState.cardId, cards.id))
+    .where(and(eq(cards.module, module), eq(cards.isDeleted, false)))
+    .all();
+  return rows.map(({ fsrs: row }) => ({
+    due: row.due,
+    stability: row.stability,
+    difficulty: row.difficulty,
+    reps: row.reps,
+    lapses: row.lapses,
+    phase: row.phase,
+    scheduledDays: row.scheduledDays,
+    learningSteps: row.learningSteps,
+    lastReview: row.lastReview,
+  }));
+}

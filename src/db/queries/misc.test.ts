@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createTestDb } from '../testing';
 import type { Db } from '../types';
-import { getAbility, upsertAbility } from './ability';
+import { getAbility, listAbilityHistory, upsertAbility } from './ability';
 import { insertAssessment, listAssessments } from './assessments';
 import { endSession, listSessions, startSession } from './sessions';
 
@@ -44,6 +44,20 @@ describe('assessments / ability / sessions queries', () => {
     upsertAbility(db, 'memory', 1520, new Date('2026-07-19Z'));
     expect(getAbility(db, 'memory')?.elo).toBe(1520);
     expect(listAssessments(db).length).toBe(0); // no cross-table leakage
+  });
+
+  it('appends an ability_log row on every upsertAbility call, in ts order', () => {
+    upsertAbility(db, 'memory', 1500, new Date('2026-07-18Z'));
+    upsertAbility(db, 'memory', 1520, new Date('2026-07-19Z'));
+    upsertAbility(db, 'memory', 1510, new Date('2026-07-20Z'));
+    expect(listAbilityHistory(db, 'memory').map((r) => r.elo)).toEqual([1500, 1520, 1510]);
+  });
+
+  it('scopes ability_log per module, no cross-module leakage', () => {
+    upsertAbility(db, 'memory', 1500, new Date('2026-07-18Z'));
+    upsertAbility(db, 'attention', 1300, new Date('2026-07-18Z'));
+    expect(listAbilityHistory(db, 'memory').map((r) => r.elo)).toEqual([1500]);
+    expect(listAbilityHistory(db, 'attention').map((r) => r.elo)).toEqual([1300]);
   });
 
   it('starts and ends a session', () => {

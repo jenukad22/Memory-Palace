@@ -29,6 +29,10 @@ numbered `.sql` file (the bundler picks up files in lexical order).
 
 - **`review_log` is append-only:** no update/delete query functions exist, and DB triggers
   `RAISE(ABORT)` on any UPDATE/DELETE.
+- **`ability_log` is append-only** (same trigger pattern as `review_log`): every `upsertAbility` call
+  also appends a row here; no update/delete query functions exist. `ability_ratings` holds only the
+  current value per module — `ability_log` is the sole durable record of a module's Elo over time. See
+  [2026-07-31-progress-dashboard-design.md](../../docs/superpowers/specs/2026-07-31-progress-dashboard-design.md).
 - **`fsrs_state` columns equal `CardState` field names** (enum column is `phase`, not `state`), so a
   row maps to a `CardState` with no translation. [fsrs-typecheck.ts](./fsrs-typecheck.ts) guards this
   against ts-fsrs version drift at compile time.

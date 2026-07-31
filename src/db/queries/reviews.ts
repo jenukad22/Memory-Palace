@@ -90,6 +90,21 @@ export function moduleReviewStatsSince(db: Db, module: string, since: Date): Mod
   return { count: rows.length, hits: rows.filter((r) => r.rating !== 'again').length };
 }
 
+/**
+ * Every review timestamp for a module — feeds the streak/consistency engine
+ * (src/engine/streak.ts), which collapses these to distinct local calendar
+ * days itself. Unbounded, like every other list* function in this file.
+ */
+export function listModuleActivityDays(db: Db, module: string): Date[] {
+  const rows = db
+    .select({ ts: reviewLog.ts })
+    .from(reviewLog)
+    .innerJoin(cards, eq(reviewLog.cardId, cards.id))
+    .where(eq(cards.module, module))
+    .all();
+  return rows.map((r) => r.ts);
+}
+
 /** How many reviews a module has logged — drives the provisional-K schedule. */
 export function countModuleReviews(db: Db, module: string): number {
   const row = db

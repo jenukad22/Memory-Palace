@@ -15,7 +15,7 @@ describe('runMigrations', () => {
       (r) => r.name,
     );
 
-  it('creates all six tables', () => {
+  it('creates all seven tables', () => {
     const tables = names('table');
     for (const t of [
       'cards',
@@ -23,6 +23,7 @@ describe('runMigrations', () => {
       'review_log',
       'assessments',
       'ability_ratings',
+      'ability_log',
       'sessions',
     ]) {
       expect(tables).toContain(t);
@@ -59,6 +60,8 @@ describe('runMigrations', () => {
       '0001_review_log_append_only',
       '0002_robust_arclight',
       '0003_tranquil_guardsmen',
+      '0004_long_white_tiger',
+      '0005_ability_log_append_only',
     ]);
   });
 
@@ -76,5 +79,13 @@ describe('runMigrations', () => {
     expect(() => db.run(sql`DELETE FROM review_log WHERE id = 'r1'`)).toThrow();
     const rows = db.all(sql`SELECT rating FROM review_log WHERE id = 'r1'`) as { rating: string }[];
     expect(rows).toEqual([{ rating: 'good' }]);
+  });
+
+  it('blocks UPDATE and DELETE on ability_log via triggers', () => {
+    db.run(sql`INSERT INTO ability_log (id, module, elo, ts) VALUES ('a1','memory',1200,0)`);
+    expect(() => db.run(sql`UPDATE ability_log SET elo = 1300 WHERE id = 'a1'`)).toThrow();
+    expect(() => db.run(sql`DELETE FROM ability_log WHERE id = 'a1'`)).toThrow();
+    const rows = db.all(sql`SELECT elo FROM ability_log WHERE id = 'a1'`) as { elo: number }[];
+    expect(rows).toEqual([{ elo: 1200 }]);
   });
 });

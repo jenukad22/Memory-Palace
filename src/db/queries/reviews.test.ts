@@ -5,6 +5,7 @@ import type { Db } from '../types';
 import { createCard } from './cards';
 import {
   appendReview,
+  listModuleActivityDays,
   listReviewsByCard,
   listReviewsSince,
   moduleReviewStatsSince,
@@ -110,5 +111,33 @@ describe('review queries', () => {
 
     const stats = moduleReviewStatsSince(db, 'memory', new Date('2026-07-15T00:00:00Z'));
     expect(stats).toEqual({ count: 2, hits: 1 });
+  });
+
+  it("listModuleActivityDays returns a module's review timestamps only", () => {
+    createCard(db, { id: 'other', module: 'pao', front: 'f', back: 'b' });
+    const base = { elapsedMs: 1, difficulty: 5, stability: 1, retrievability: 0.9 };
+    appendReview(db, {
+      cardId: 'c1',
+      rating: 'good',
+      ts: new Date('2026-07-10T00:00:00Z'),
+      ...base,
+    });
+    appendReview(db, {
+      cardId: 'c1',
+      rating: 'good',
+      ts: new Date('2026-07-11T00:00:00Z'),
+      ...base,
+    });
+    appendReview(db, {
+      cardId: 'other',
+      rating: 'good',
+      ts: new Date('2026-07-12T00:00:00Z'),
+      ...base,
+    });
+    const days = listModuleActivityDays(db, 'memory');
+    expect(days.map((d) => d.toISOString())).toEqual([
+      '2026-07-10T00:00:00.000Z',
+      '2026-07-11T00:00:00.000Z',
+    ]);
   });
 });

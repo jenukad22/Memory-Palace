@@ -7,6 +7,7 @@ import {
   getCard,
   getFsrsState,
   listCardsByModule,
+  listFsrsStatesByModule,
   softDeleteCard,
   upsertFsrsState,
 } from './cards';
@@ -78,5 +79,19 @@ describe('card queries', () => {
     const reviewedAt = new Date('2026-07-18T00:00:00.000Z');
     const after = schedule({ ...state, lastReview: null }, 'good', reviewedAt);
     expect(after.lastReview).toEqual(reviewedAt);
+  });
+
+  it('lists FSRS state for a module only, excluding soft-deleted and other modules', () => {
+    createCard(db, { id: 'm1', module: 'memory', front: 'f', back: 'b' });
+    createCard(db, { id: 'm2', module: 'memory', front: 'f', back: 'b' });
+    createCard(db, { id: 'a1', module: 'attention', front: 'f', back: 'b' });
+    softDeleteCard(db, 'm2');
+    const states = listFsrsStatesByModule(db, 'memory');
+    expect(states).toHaveLength(1);
+    expect(states[0]?.phase).toBe('new');
+  });
+
+  it('returns [] for a module with no cards', () => {
+    expect(listFsrsStatesByModule(db, 'reasoning')).toEqual([]);
   });
 });

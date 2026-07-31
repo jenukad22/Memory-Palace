@@ -40,4 +40,18 @@ export const MIGRATIONS: Migration[] = [
       'CREATE TABLE `palaces` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`name` text NOT NULL,\n\t`created_at` integer NOT NULL,\n\t`is_deleted` integer DEFAULT false NOT NULL\n);',
     ],
   },
+  {
+    tag: '0004_long_white_tiger',
+    statements: [
+      'CREATE TABLE `ability_log` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`module` text NOT NULL,\n\t`elo` real NOT NULL,\n\t`ts` integer NOT NULL\n);',
+      'CREATE INDEX `ability_log_module_ts_idx` ON `ability_log` (`module`,`ts`);',
+    ],
+  },
+  {
+    tag: '0005_ability_log_append_only',
+    statements: [
+      "CREATE TRIGGER ability_log_no_update BEFORE UPDATE ON ability_log\nBEGIN\n  SELECT RAISE(ABORT, 'ability_log is append-only');\nEND;",
+      "CREATE TRIGGER ability_log_no_delete BEFORE DELETE ON ability_log\nBEGIN\n  SELECT RAISE(ABORT, 'ability_log is append-only');\nEND;",
+    ],
+  },
 ];

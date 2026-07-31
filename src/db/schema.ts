@@ -68,6 +68,20 @@ export const abilityRatings = sqliteTable('ability_ratings', {
   updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull(),
 });
 
+// Append-only history of every ability_ratings write (see ability_log_no_update/
+// ability_log_no_delete triggers, migration 0005) — abilityRatings holds only the
+// current value, so this is the sole durable record of a module's Elo over time.
+export const abilityLog = sqliteTable(
+  'ability_log',
+  {
+    id: text('id').primaryKey(),
+    module: text('module').notNull(),
+    elo: real('elo').notNull(),
+    ts: integer('ts', { mode: 'timestamp_ms' }).notNull(),
+  },
+  (t) => [index('ability_log_module_ts_idx').on(t.module, t.ts)],
+);
+
 export const sessions = sqliteTable('sessions', {
   id: text('id').primaryKey(),
   started: integer('started', { mode: 'timestamp_ms' }).notNull(),
@@ -114,6 +128,7 @@ export type FsrsStateRow = typeof fsrsState.$inferSelect;
 export type ReviewLogRow = typeof reviewLog.$inferSelect;
 export type AssessmentRow = typeof assessments.$inferSelect;
 export type AbilityRow = typeof abilityRatings.$inferSelect;
+export type AbilityLogRow = typeof abilityLog.$inferSelect;
 export type SessionRow = typeof sessions.$inferSelect;
 export type PalaceRow = typeof palaces.$inferSelect;
 export type NewPalaceRow = typeof palaces.$inferInsert;

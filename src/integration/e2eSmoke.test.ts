@@ -24,7 +24,7 @@
 import { sql } from 'drizzle-orm';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { SPAN_INSTRUMENTS, spanPayload, type SpanTrialLogEntry } from '@/assessment/battery';
-import { getAbility, upsertAbility } from '../db/queries/ability';
+import { getAbility, listAbilityHistory, upsertAbility } from '../db/queries/ability';
 import { insertAssessment, listAssessments } from '../db/queries/assessments';
 import {
   bestPalaceForCampaign,
@@ -78,6 +78,8 @@ const EXPECTED_MIGRATION_TAGS = [
   '0001_review_log_append_only',
   '0002_robust_arclight',
   '0003_tranquil_guardsmen',
+  '0004_long_white_tiger',
+  '0005_ability_log_append_only',
 ];
 
 const PLACEMENT_ITEMS = [
@@ -117,8 +119,9 @@ describe('end-to-end smoke test (DB + engine layers)', () => {
 
   it('1. applies every migration to a fresh DB, in order', () => {
     const rows = db.all(sql`SELECT tag FROM _migrations ORDER BY rowid`) as { tag: string }[];
-    // Note: 4 migrations, not 3 — 0003 (palaces/loci) was added in an earlier
-    // phase of this project. This assertion reflects the current codebase.
+    // Note: 6 migrations — 0003 (palaces/loci) and 0004/0005 (ability_log +
+    // its append-only triggers) were added in later phases of this project.
+    // This assertion reflects the current codebase.
     expect(rows.map((r) => r.tag)).toEqual(EXPECTED_MIGRATION_TAGS);
   });
 
@@ -197,6 +200,12 @@ describe('end-to-end smoke test (DB + engine layers)', () => {
     expect(ability!.elo).toBeGreaterThanOrEqual(ELO_MIN);
     expect(ability!.elo).toBeLessThanOrEqual(ELO_MAX);
 
+    // The baseline seed is also the first ability_log point — the progress
+    // dashboard's Elo-over-time chart has something to show from minute one.
+    const history = listAbilityHistory(db, 'memory');
+    expect(history).toHaveLength(1);
+    expect(history[0]!.elo).toBe(ability!.elo);
+
     const [session] = listSessions(db, 'memory');
     expect(session?.ended?.getTime()).toBe(NOW.getTime());
     expect(session?.items).toBe(5);
@@ -228,6 +237,7 @@ describe('end-to-end smoke test (DB + engine layers)', () => {
     const before = getFsrsState(db, cardId)!;
     expect(before.phase).toBe('new');
     const eloBefore = getAbility(db, 'memory')!.elo;
+    const historyLengthBefore = listAbilityHistory(db, 'memory').length;
     const reviewsBefore = listReviewsByCard(db, cardId).length;
 
     recordReview(db, { cardId, module: 'memory', rating: 'good', now: NOW });
@@ -237,6 +247,11 @@ describe('end-to-end smoke test (DB + engine layers)', () => {
     expect(after.phase).not.toBe('new');
     expect(after.due.getTime()).toBeGreaterThan(before.due.getTime());
     expect(getAbility(db, 'memory')!.elo).not.toBe(eloBefore);
+    // recordReview's transaction appends to ability_log too — the real write
+    // path this feature depends on, not just a direct upsertAbility call.
+    const historyAfter = listAbilityHistory(db, 'memory');
+    expect(historyAfter).toHaveLength(historyLengthBefore + 1);
+    expect(historyAfter.at(-1)!.elo).toBe(getAbility(db, 'memory')!.elo);
 
     // Same pipeline for a PAO entry, module 'pao'.
     recordReview(db, { cardId: paoCardIds[0]!, module: 'pao', rating: 'good', now: NOW });
