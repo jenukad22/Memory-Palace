@@ -3,6 +3,7 @@ export * from './difficulty';
 export * from './elo';
 export * from './fsrs';
 export * from './assessment';
+export * from './attention';
 export * from './pao';
 export * from './palace';
 export * from './review';

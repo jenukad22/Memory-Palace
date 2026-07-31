@@ -185,20 +185,55 @@ per-trial counts go to the future `payload` column (§12 follow-up). **Timing:**
 
 ---
 
-## 6. N-back — **DEFERRED (design only, not built in Phase 3)**
+## 6. N-back — **DEFERRED (design only, still not built)**
 
-Belongs to the `attention` module (Phase 6.1). Recorded design for when it lands; **no engine code,
-screens, or `assessments` rows now.** When implemented (all still CONFIRM at that time): fixed **2-back**
-baseline, single-letter stimuli, ~30% target rate, fixed trial count, primary raw = **d′** (loglinear
-edge-corrected).
+Belongs to the `attention` module. Phase 6.1 shipped the PVT-B, a go/no-go CPT and a change-blindness
+flicker task instead (`src/modules/attention/SPEC.md`); N-back remains unbuilt. Recorded design for
+when it lands: fixed **2-back** baseline, single-letter stimuli, ~30% target rate, fixed trial count,
+primary raw = **d′** (loglinear edge-corrected).
+
+The d′ machinery it needs already exists and is tested —
+[engine/attention/signalDetection.ts](../engine/attention/signalDetection.ts) was written shared for
+exactly this reason. Note its **documented residual at unequal signal/noise counts** (see that file);
+an N-back at a ~30 % target rate is in that regime.
 
 ---
 
-## 7. PVT — **DEFERRED (design only, not built in Phase 3)**
+## 7. PVT — **BUILT in Phase 6.1** (`attention` module)
 
-Belongs to the `attention` module (Phase 6.1). Recorded deferred defaults for when it lands; **not
-built now:** **PVT-B (3 min)**, random ISI 2–10 s, **lapse threshold 355 ms**, primary metric =
-**response speed (mean 1/RT)**. False starts (RT < 100 ms or pre-stimulus) excluded from RT stats.
+**Paradigm.** PVT-B, the brief variant (Basner, Mollicone & Dinges 2011): a stimulus appears at
+unpredictable intervals, the user responds as fast as they can, and the run is scored on how quickly
+and how consistently they did so.
+
+**Recorded values — these are the implemented values.** Each is a single constant in
+[engine/attention/timing.ts](../engine/attention/timing.ts) and is asserted against this table by
+[modules/attention/specSync.test.ts](../modules/attention/specSync.test.ts), so the doc and the code
+cannot drift apart silently.
+
+| Parameter               | Value  | Constant                  |
+| ----------------------- | ------ | ------------------------- |
+| Run duration            | 3 min  | `PVTB_DURATION_MS`        |
+| Inter-stimulus interval | 1–4 s  | `PVTB_ISI_MIN_MS` / `MAX` |
+| Stimulus timeout        | 3 s    | `PVTB_MAX_STIMULUS_MS`    |
+| Lapse threshold         | 355 ms | `PVTB_LAPSE_MS`           |
+| False-start floor       | 100 ms | `PVTB_FALSE_START_MS`     |
+
+**Primary metric = response speed (mean 1/RT)**, in responses per second. False starts (RT < 100 ms,
+or a press before the stimulus) are excluded from the RT statistics; lapses are included, because a
+lapse is a real response. Non-responses are imputed at the 3 s timeout rather than dropped
+(`modules/attention/SPEC.md` §4.1).
+
+**ISI changed from the deferred default: 2–10 s → 1–4 s.** The originally recorded pair mixed two
+instruments. 2–10 s is the **10-minute** PVT's interval; the 3-minute **B** variant shortens it to
+1–4 s precisely so a short run still yields a usable trial count. At 2–10 s a 3-minute run collects
+roughly **30 trials**, against roughly **75** at 1–4 s — a third of the data the lapse rate and
+response-speed distribution rest on. The duration and the interval have to come from the same
+instrument; the interval is the one that was wrong.
+
+Everything else recorded here — 3 min, 355 ms, mean 1/RT, false-start exclusion — was carried into
+the implementation unchanged. [modules/attention/SPEC.md](../modules/attention/SPEC.md) §4.1 is the
+working detail (trial classification, imputation, the full metric set); this section is the record of
+the instrument's binding numbers.
 
 ---
 
@@ -263,6 +298,16 @@ proxy `SPAN_MID 4.5 / SPAN_SPREAD 2.25 / Z_CAP 3`; Elo `MIDPOINT 1200 / PER_SD 2
 vivid); digit span start 3, Corsi start 2, 1-of-2 reproduced, cap 9, forward+backward as separate rows,
 raw = span; digit timing 800/200 ms, Corsi 1000/250 ms; routing = substitute non-visual strategy,
 non-sticky; `sessions.accuracy` = 0 for batteries.
+
+**Added 2026-07-31 (Phase 6.1).** This summary was written while §6/§7/§9 were still deferred, so it
+carried no attention numbers — the PVT's 355 ms lapse threshold was recorded in §7 only. Now that the
+instrument is built, its binding numbers belong here too: **PVT-B** 3 min, ISI 1–4 s (corrected from
+the deferred 2–10 s, §7), stimulus timeout 3 s, lapse ≥ 355 ms, false-start floor 100 ms, raw =
+response speed (mean 1/RT); **CPT** 120 trials, 250 ms stimulus + 1000 ms blank, 25 % distractors,
+raw = loglinear d′; **flicker** 500/80 ms alternation, 60 s timeout, 4 trials, raw = mean detection
+time with misses imputed at the timeout. All are single constants in
+[engine/attention/timing.ts](../engine/attention/timing.ts), asserted against the docs by
+[modules/attention/specSync.test.ts](../modules/attention/specSync.test.ts).
 
 ### Tracked follow-ups (one migration, handled Phase-2 style: spec → plan → TDD → green commit)
 

@@ -11,7 +11,8 @@ so cross-cutting or deferred work isn't lost between them.
 | 3     | Baseline battery — VVIQ, digit span (F/B), Corsi (F/B); scoring, Elo seeding, VVIQ routing | ✅ Done     |
 | 4     | Memory module — palace + PAO trainers, daily cross-module review, 6-week MoL campaign      | ✅ Done     |
 | 5     | _next — not yet scoped_                                                                    | ⏳ Upcoming |
-| 6.1   | Attention module — N-back, PVT (design-only in `src/assessment/SPEC.md` §6/§7)             | 🔜 Deferred |
+| 6.1   | Attention module — PVT-B, go/no-go CPT, change-blindness flicker, timing instrumentation   | ✅ Done     |
+| 6.1b  | Attention — N-back (still design-only in `src/assessment/SPEC.md` §6)                      | 🔜 Deferred |
 | 6.2   | Reasoning module — pattern/relational tasks (design-only in `src/assessment/SPEC.md` §9)   | 🔜 Deferred |
 | 7     | **First-run education / technique-teaching layer** (see below)                             | 📝 Recorded |
 

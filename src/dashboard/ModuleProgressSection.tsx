@@ -18,11 +18,18 @@ export interface BaselineTaskData {
 
 export interface ModuleProgressData {
   eloPoints: ChartPoint[];
-  retentionPoints: ChartPoint[];
+  /**
+   * Predicted-retention curve, or null for a module with no scheduled cards.
+   * Attention tasks are timed runs, not reviews — an always-empty FSRS curve
+   * there would be noise dressed up as a chart.
+   */
+  retentionPoints: ChartPoint[] | null;
   streakDays: boolean[];
   streakCount: number;
   consistencyPct: number;
   baselineTasks: BaselineTaskData[];
+  /** Copy for the empty Elo chart — what the user must do to populate it. */
+  eloEmptyLabel?: string;
 }
 
 export interface ModuleProgressSectionProps {
@@ -45,28 +52,30 @@ export function ModuleProgressSection({ title, data, onRetake }: ModuleProgressS
           <LineChart
             points={data.eloPoints}
             height={120}
-            emptyLabel="Rate a few reviews to see this."
+            emptyLabel={data.eloEmptyLabel ?? 'Rate a few reviews to see this.'}
           />
         </View>
       </Card>
 
-      <Card>
-        <AppText variant="overline" color="textSecondary">
-          Predicted retention
-        </AppText>
-        <AppText variant="caption" color="textMuted" style={{ paddingTop: space.sp1 }}>
-          Predicted, based on your current review schedule.
-        </AppText>
-        <View style={{ paddingTop: space.sp2 }}>
-          <LineChart
-            points={data.retentionPoints}
-            height={120}
-            yDomain={[0, 1]}
-            yFormat={(v) => `${Math.round(v * 100)}%`}
-            emptyLabel="Review a few cards to see this."
-          />
-        </View>
-      </Card>
+      {data.retentionPoints !== null ? (
+        <Card>
+          <AppText variant="overline" color="textSecondary">
+            Predicted retention
+          </AppText>
+          <AppText variant="caption" color="textMuted" style={{ paddingTop: space.sp1 }}>
+            Predicted, based on your current review schedule.
+          </AppText>
+          <View style={{ paddingTop: space.sp2 }}>
+            <LineChart
+              points={data.retentionPoints}
+              height={120}
+              yDomain={[0, 1]}
+              yFormat={(v) => `${Math.round(v * 100)}%`}
+              emptyLabel="Review a few cards to see this."
+            />
+          </View>
+        </Card>
+      ) : null}
 
       <Card>
         <AppText variant="overline" color="textSecondary">

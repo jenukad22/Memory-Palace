@@ -2,9 +2,9 @@ import { useRouter } from 'expo-router';
 import { View } from 'react-native';
 import { AppText, Button, Card, ComingSoonTag, ScreenShell, space } from '@/ui';
 
-// Training hub — one card per cognitive domain (/src/modules). Memory is live;
-// Attention and Reasoning are later phases, shown as not-yet-available rather
-// than as dead links to placeholder screens.
+// Training hub — one card per cognitive domain (/src/modules). Memory and
+// Attention are live; Reasoning is a later phase, shown as not-yet-available
+// rather than as a dead link to a placeholder screen.
 interface Domain {
   key: string;
   name: string;
@@ -22,7 +22,9 @@ const DOMAINS: readonly Domain[] = [
   {
     key: 'attention',
     name: 'Attention',
-    blurb: 'Sustained-attention and working-memory tasks (N-back, PVT).',
+    blurb:
+      'Three timed tasks: a 3-minute reaction-time run, a go/no-go letter stream, and a change-flicker search.',
+    route: '/modules/attention',
   },
   {
     key: 'reasoning',
