@@ -24,6 +24,9 @@ export function createCard(db: Db, input: NewCardInput): CardRow {
     payload: input.payload === undefined ? null : JSON.stringify(input.payload),
     createdAt: now,
     isSynced: false,
+    // Set explicitly at insert; the dirty-marking trigger (migration 0007)
+    // maintains it from then on.
+    updatedAt: now,
     isDeleted: false,
   };
   const state = createEmptyCardState(now);

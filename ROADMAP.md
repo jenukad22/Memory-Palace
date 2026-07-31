@@ -16,6 +16,7 @@ so cross-cutting or deferred work isn't lost between them.
 | 6.2   | Reasoning module — base-rate formats, hypothesis fluency, disconfirmation, calibration     | ✅ Done     |
 | 6.2b  | Reasoning — matrix reasoning (recorded default in `src/assessment/SPEC.md` §9, not built)  | 🔜 Deferred |
 | 7     | **First-run education / technique-teaching layer** (see below)                             | 📝 Recorded |
+| 8     | Optional Supabase auth + sync (local-first stays default; env-gated)                       | ✅ Done     |
 
 ## Phase 7 — First-run education / technique-teaching layer
 
@@ -48,3 +49,21 @@ now):**
 
 This is a UX/onboarding layer, independent of the attention/reasoning module
 work in 6.1/6.2 — it can land in any order relative to those.
+
+## Phase 8 — Optional Supabase auth + sync
+
+**Built.** Design and conflict strategy:
+[docs/superpowers/specs/2026-07-31-supabase-sync-design.md](docs/superpowers/specs/2026-07-31-supabase-sync-design.md).
+Server schema + RLS: [docs/supabase-schema.sql](docs/supabase-schema.sql).
+
+Local-first is unchanged and remains the default. With `EXPO_PUBLIC_SUPABASE_URL`
+/ `EXPO_PUBLIC_SUPABASE_ANON_KEY` unset, the feature does not exist — no settings
+entry, no client, no network code. Every table is merged by one of four
+strategies chosen from how it actually mutates: union for the append-only
+scientific record, recomputation for derived state, last-writer-wins with
+tombstone precedence for mutable rows, and whole-list replacement for a palace's
+loci (the only shape that cannot violate `UNIQUE(palace_id, position)`).
+
+**Deferred:** realtime subscriptions, background sync, and field-level/CRDT
+merge. Sync is manual today. Cross-schema-version sync is gated rather than
+handled — both devices must be on the same migration index.

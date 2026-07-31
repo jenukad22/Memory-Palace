@@ -26,11 +26,14 @@ export interface NewPalaceInput {
 }
 
 export function createPalace(db: Db, input: NewPalaceInput): PalaceRow {
+  const now = input.now ?? new Date();
   const row: PalaceRow = {
     id: input.id ?? newId(),
     name: input.name,
-    createdAt: input.now ?? new Date(),
+    createdAt: now,
     isDeleted: false,
+    isSynced: false,
+    updatedAt: now,
   };
   db.insert(palaces).values(row).run();
   return row;

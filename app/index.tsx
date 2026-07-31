@@ -68,6 +68,8 @@ export default function Dashboard() {
           onPress={() => router.push('/review')}
         />
 
+        <Button kind="ghost" label="Settings" onPress={() => router.push('/settings')} />
+
         {__DEV__ ? (
           <Button kind="ghost" label="Developer tools" onPress={() => router.push('/dev')} />
         ) : null}

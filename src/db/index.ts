@@ -14,6 +14,7 @@ export * from './queries/assessments';
 export * from './queries/vviq';
 export * from './queries/ability';
 export * from './queries/sessions';
+export * from './queries/sync';
 export { seedDemoCards } from './seed';
 export { runDbSelfTest, type SelfTestResult } from './selftest';
 export { createDb, type AppDb } from './client';

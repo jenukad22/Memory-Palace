@@ -62,6 +62,8 @@ describe('runMigrations', () => {
       '0003_tranquil_guardsmen',
       '0004_long_white_tiger',
       '0005_ability_log_append_only',
+      '0006_sync_columns',
+      '0007_sync_dirty_triggers',
     ]);
   });
 

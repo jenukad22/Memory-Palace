@@ -5,6 +5,7 @@ export * from './fsrs';
 export * from './assessment';
 export * from './attention';
 export * from './reasoning';
+export * from './sync';
 export * from './pao';
 export * from './palace';
 export * from './review';

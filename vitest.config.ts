@@ -19,6 +19,7 @@ export default defineConfig({
       'src/assessment/**/*.test.ts',
       'src/modules/**/*.test.ts',
       'src/review/**/*.test.ts',
+      'src/sync/**/*.test.ts',
       'src/integration/**/*.test.ts',
     ],
     coverage: {
@@ -30,6 +31,7 @@ export default defineConfig({
         'src/assessment/**/*.ts',
         'src/modules/**/*.ts',
         'src/review/**/*.ts',
+        'src/sync/**/*.ts',
       ],
       exclude: [
         'src/engine/**/*.test.ts',
@@ -38,6 +40,7 @@ export default defineConfig({
         'src/assessment/**/*.test.ts',
         'src/modules/**/*.test.ts',
         'src/review/**/*.test.ts',
+        'src/sync/**/*.test.ts',
         'src/db/migrations.generated.ts',
       ],
     },

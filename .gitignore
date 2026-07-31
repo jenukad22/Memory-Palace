@@ -42,3 +42,7 @@ coverage/
 # OS
 .DS_Store
 Thumbs.db
+
+# local env (Supabase sync config) — .env.example is the committed template
+.env
+.env.local

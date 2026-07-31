@@ -16,7 +16,16 @@ export function startSession(
   id: string = newId(),
 ): string {
   db.insert(sessions)
-    .values({ id, module, started: now, ended: null, items: 0, accuracy: 0 })
+    .values({
+      id,
+      module,
+      started: now,
+      ended: null,
+      items: 0,
+      accuracy: 0,
+      isSynced: false,
+      updatedAt: now,
+    })
     .run();
   return id;
 }

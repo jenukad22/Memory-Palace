@@ -8,6 +8,6 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "platforms": ["ios", "android", "web"],
-    "plugins": ["expo-sqlite", "expo-router", "expo-status-bar"]
+    "plugins": ["expo-sqlite", "expo-router", "expo-status-bar", "expo-secure-store"]
   }
 }
