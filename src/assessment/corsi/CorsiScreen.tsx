@@ -24,15 +24,24 @@ import { SPAN_INSTRUMENTS, spanPayload, type SpanTrialLogEntry } from '../batter
 
 type Phase = 'intro' | 'display' | 'recall';
 
+export interface CorsiScreenProps {
+  /** 'retake' skips the onboarding-only battery finalization (Elo reseed,
+   * session close, useBatterySession reset) and returns to the progress
+   * dashboard instead of the onboarding checkpoint. */
+  mode?: 'onboarding' | 'retake';
+}
+
 /**
  * Corsi block-tapping administration (SPEC.md sec 5) — forward then backward,
  * separate instrument rows. Engine owns the rules (start 2, two trials per
  * length, 1-of-2 reproduced, discontinue on double fail, cap 9, 1000/250 ms).
- * After the backward pass this screen finalizes the battery: memory Elo is
- * seeded from the four span instruments and the sessions row is closed
- * (accuracy stays 0 for battery sessions, SPEC.md sec 10).
+ * After the backward pass, onboarding mode finalizes the battery: memory Elo
+ * is seeded from the four span instruments and the sessions row is closed
+ * (accuracy stays 0 for battery sessions, SPEC.md sec 10). A retake must never
+ * do this — it would silently overwrite the Elo history ability_log exists to
+ * preserve — so finalizeBattery() only ever runs in onboarding mode.
  */
-export function CorsiScreen() {
+export function CorsiScreen({ mode = 'onboarding' }: CorsiScreenProps = {}) {
   const db = useDb();
   const router = useRouter();
   const [direction, setDirection] = useState<SpanDirection>('forward');
@@ -108,14 +117,16 @@ export function CorsiScreen() {
       rawScore: finished.span,
       payload: spanPayload(logRef.current),
     });
-    useBatterySession.getState().recordItem();
+    if (mode === 'onboarding') useBatterySession.getState().recordItem();
     if (dir === 'forward') {
       setSpan(initSpanState(CORSI_SPAN_START));
       logRef.current = [];
       setDirection('backward');
       setPhase('intro');
-    } else {
+    } else if (mode === 'onboarding') {
       finalizeBattery();
+    } else {
+      router.replace('/progress');
     }
   };
 
@@ -145,7 +156,11 @@ export function CorsiScreen() {
   const fills: [number, number, number] = [1, 1, direction === 'backward' ? 0.5 : 0];
 
   return (
-    <ScreenShell kicker="Baseline · 3 of 3" taskName="Corsi blocks" fills={fills}>
+    <ScreenShell
+      kicker={mode === 'onboarding' ? 'Baseline · 3 of 3' : 'Baseline retake'}
+      taskName="Corsi blocks"
+      fills={fills}
+    >
       {phase === 'intro' ? (
         <View style={{ gap: space.sp3, paddingTop: space.sp5 }}>
           <AppText variant="heading">

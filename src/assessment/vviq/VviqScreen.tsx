@@ -8,12 +8,18 @@ import { AppText, LikertScale, ScreenShell, motion, space } from '../../ui';
 import { batteryFills, doneSet } from '../battery';
 import { VVIQ_ANCHORS, VVIQ_ITEMS } from './items';
 
+export interface VviqScreenProps {
+  /** 'retake' skips onboarding's battery-session bookkeeping and returns to
+   * the progress dashboard instead of the onboarding checkpoint. */
+  mode?: 'onboarding' | 'retake';
+}
+
 /**
  * VVIQ administration (SPEC.md sec 3): 16 items, single eyes-open pass,
  * self-paced, one item per screen. Presents and captures only — scoring is
  * engine's vviqTotal; the row goes through the Phase 2 query layer.
  */
-export function VviqScreen() {
+export function VviqScreen({ mode = 'onboarding' }: VviqScreenProps = {}) {
   const db = useDb();
   const router = useRouter();
   const [index, setIndex] = useState(0);
@@ -46,13 +52,21 @@ export function VviqScreen() {
         rawScore: total,
         payload: JSON.stringify({ responses: all }),
       });
-      useBatterySession.getState().recordItem();
-      router.replace('/onboarding/checkpoint');
+      if (mode === 'onboarding') {
+        useBatterySession.getState().recordItem();
+        router.replace('/onboarding/checkpoint');
+      } else {
+        router.replace('/progress');
+      }
     }, motion.advanceMs);
   };
 
   return (
-    <ScreenShell kicker="Baseline · 1 of 3" taskName="Imagery" fills={batteryFills(doneSet([]))}>
+    <ScreenShell
+      kicker={mode === 'onboarding' ? 'Baseline · 1 of 3' : 'Baseline retake'}
+      taskName="Imagery"
+      {...(mode === 'onboarding' ? { fills: batteryFills(doneSet([])) } : {})}
+    >
       <View style={{ gap: space.sp3, paddingTop: space.sp3 }}>
         <AppText variant="caption" color="textSecondary">
           Item {index + 1} of {VVIQ_ITEMS.length}

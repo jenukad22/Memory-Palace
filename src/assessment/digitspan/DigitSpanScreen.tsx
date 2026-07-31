@@ -22,13 +22,19 @@ import { spanPayload, type SpanTrialLogEntry } from '../battery';
 
 type Phase = 'intro' | 'display' | 'recall';
 
+export interface DigitSpanScreenProps {
+  /** 'retake' skips onboarding's battery-session bookkeeping and returns to
+   * the progress dashboard instead of the onboarding checkpoint. */
+  mode?: 'onboarding' | 'retake';
+}
+
 /**
  * Digit span administration (SPEC.md sec 4) — forward then backward, stored as
  * separate instrument rows. The engine owns the rules (start 3, two trials per
  * length, 1-of-2 reproduced, discontinue on double fail, cap 9, 800/200 ms);
  * this screen presents stimuli and captures typed recall only.
  */
-export function DigitSpanScreen() {
+export function DigitSpanScreen({ mode = 'onboarding' }: DigitSpanScreenProps = {}) {
   const db = useDb();
   const router = useRouter();
   const [direction, setDirection] = useState<SpanDirection>('forward');
@@ -86,14 +92,16 @@ export function DigitSpanScreen() {
       rawScore: finished.span,
       payload: spanPayload(logRef.current),
     });
-    useBatterySession.getState().recordItem();
+    if (mode === 'onboarding') useBatterySession.getState().recordItem();
     if (dir === 'forward') {
       setSpan(initSpanState(DIGIT_SPAN_START));
       logRef.current = [];
       setDirection('backward');
       setPhase('intro');
-    } else {
+    } else if (mode === 'onboarding') {
       router.replace('/onboarding/checkpoint');
+    } else {
+      router.replace('/progress');
     }
   };
 
@@ -114,7 +122,11 @@ export function DigitSpanScreen() {
   const fills: [number, number, number] = [1, direction === 'backward' ? 0.5 : 0, 0];
 
   return (
-    <ScreenShell kicker="Baseline · 2 of 3" taskName="Digit span" fills={fills}>
+    <ScreenShell
+      kicker={mode === 'onboarding' ? 'Baseline · 2 of 3' : 'Baseline retake'}
+      taskName="Digit span"
+      fills={fills}
+    >
       {phase === 'intro' ? (
         <View style={{ gap: space.sp3, paddingTop: space.sp5 }}>
           <AppText variant="heading">
