@@ -1,6 +1,6 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { ScrollView } from 'react-native';
 import { BASELINE_TASKS } from '@/assessment/battery';
 import {
   listAbilityHistory,
@@ -24,7 +24,15 @@ import {
   FLICKER_INSTRUMENT,
   PVT_INSTRUMENT,
 } from '@/modules/attention';
-import { AppText, Card, ComingSoonTag, ScreenShell, space } from '@/ui';
+import {
+  BASE_RATE_INSTRUMENT,
+  CALIBRATION_INSTRUMENT,
+  DISCONFIRMATION_INSTRUMENT,
+  HYPOTHESES_INSTRUMENT,
+  REASONING_INSTRUMENTS,
+  REASONING_MODULE,
+} from '@/modules/reasoning';
+import { AppText, Card, ScreenShell, space } from '@/ui';
 import { ModuleProgressSection, type ModuleProgressData } from './ModuleProgressSection';
 
 const STREAK_WINDOW_DAYS = 30;
@@ -38,6 +46,10 @@ const INSTRUMENT_LABELS: Record<string, string> = {
   [PVT_INSTRUMENT]: 'Response speed (/s)',
   [CPT_INSTRUMENT]: 'd′',
   [FLICKER_INSTRUMENT]: 'Time to find (ms)',
+  [BASE_RATE_INSTRUMENT]: 'Mean error (pp)',
+  [HYPOTHESES_INSTRUMENT]: 'Unique per prompt',
+  [DISCONFIRMATION_INSTRUMENT]: 'Self-score (0-1)',
+  [CALIBRATION_INSTRUMENT]: 'Brier score',
 };
 
 /** A task whose raw scores get a trend card, with the route that re-runs it. */
@@ -59,6 +71,30 @@ const ATTENTION_TASKS: readonly TrendTask[] = [
     label: 'Change flicker',
     instruments: [FLICKER_INSTRUMENT],
     retakeRoute: '/modules/attention/flicker',
+  },
+];
+
+/** Reasoning's four tasks, same shape (SPEC.md §2). */
+const REASONING_TASKS: readonly TrendTask[] = [
+  {
+    label: 'Base rates',
+    instruments: [BASE_RATE_INSTRUMENT],
+    retakeRoute: '/modules/reasoning/base-rate',
+  },
+  {
+    label: 'Hypotheses',
+    instruments: [HYPOTHESES_INSTRUMENT],
+    retakeRoute: '/modules/reasoning/hypotheses',
+  },
+  {
+    label: 'Disconfirmation',
+    instruments: [DISCONFIRMATION_INSTRUMENT],
+    retakeRoute: '/modules/reasoning/disconfirmation',
+  },
+  {
+    label: 'Calibration',
+    instruments: [CALIBRATION_INSTRUMENT],
+    retakeRoute: '/modules/reasoning/calibration',
   },
 ];
 
@@ -122,23 +158,42 @@ function loadAttentionProgress(db: Db, now: Date): ModuleProgressData {
   };
 }
 
+/** Reasoning progress. Same shape as attention — no scheduled cards, activity
+ *  days come from the assessment rows the tasks write. */
+function loadReasoningProgress(db: Db, now: Date): ModuleProgressData {
+  const history = shapeAbilityHistory(
+    listAbilityHistory(db, REASONING_MODULE).map((r) => ({ ts: r.ts, elo: r.elo })),
+  );
+  const activityDays = REASONING_INSTRUMENTS.flatMap((instrument) =>
+    listAssessments(db, instrument).map((row) => row.ts),
+  );
+  return {
+    eloPoints: history.map((p) => ({ x: p.ts.getTime(), y: p.elo })),
+    retentionPoints: null,
+    ...streakParts(activityDays, now),
+    baselineTasks: trendSeries(db, REASONING_TASKS),
+    eloEmptyLabel: 'Finish a reasoning task to see this.',
+  };
+}
+
 /**
  * Progress dashboard (docs/superpowers/specs/2026-07-31-progress-dashboard-design.md).
  * Every number below reports performance on the specific task it comes from —
- * see the honesty note. Memory and attention have real content; reasoning is
- * still a stub, matching app/modules/index.tsx's own treatment.
+ * see the honesty note. All three modules have real content.
  */
 export function ProgressDashboardScreen() {
   const db = useDb();
   const router = useRouter();
   const [memoryData, setMemoryData] = useState<ModuleProgressData | null>(null);
   const [attentionData, setAttentionData] = useState<ModuleProgressData | null>(null);
+  const [reasoningData, setReasoningData] = useState<ModuleProgressData | null>(null);
 
   useFocusEffect(
     useCallback(() => {
       const now = new Date();
       setMemoryData(loadMemoryProgress(db, now));
       setAttentionData(loadAttentionProgress(db, now));
+      setReasoningData(loadReasoningProgress(db, now));
     }, [db]),
   );
 
@@ -173,14 +228,13 @@ export function ProgressDashboardScreen() {
           />
         ) : null}
 
-        <View style={{ gap: space.sp3 }}>
-          <AppText variant="heading" color="textSecondary">
-            Reasoning
-          </AppText>
-          <Card>
-            <ComingSoonTag />
-          </Card>
-        </View>
+        {reasoningData ? (
+          <ModuleProgressSection
+            title="Reasoning"
+            data={reasoningData}
+            onRetake={(route) => router.push(route)}
+          />
+        ) : null}
       </ScrollView>
     </ScreenShell>
   );

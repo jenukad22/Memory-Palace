@@ -13,7 +13,8 @@ so cross-cutting or deferred work isn't lost between them.
 | 5     | _next — not yet scoped_                                                                    | ⏳ Upcoming |
 | 6.1   | Attention module — PVT-B, go/no-go CPT, change-blindness flicker, timing instrumentation   | ✅ Done     |
 | 6.1b  | Attention — N-back (still design-only in `src/assessment/SPEC.md` §6)                      | 🔜 Deferred |
-| 6.2   | Reasoning module — pattern/relational tasks (design-only in `src/assessment/SPEC.md` §9)   | 🔜 Deferred |
+| 6.2   | Reasoning module — base-rate formats, hypothesis fluency, disconfirmation, calibration     | ✅ Done     |
+| 6.2b  | Reasoning — matrix reasoning (recorded default in `src/assessment/SPEC.md` §9, not built)  | 🔜 Deferred |
 | 7     | **First-run education / technique-teaching layer** (see below)                             | 📝 Recorded |
 
 ## Phase 7 — First-run education / technique-teaching layer

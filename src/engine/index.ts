@@ -4,6 +4,7 @@ export * from './elo';
 export * from './fsrs';
 export * from './assessment';
 export * from './attention';
+export * from './reasoning';
 export * from './pao';
 export * from './palace';
 export * from './review';

@@ -257,11 +257,30 @@ the user retakes VVIQ and scores > 32, they get the visual path. (Storage is a t
 
 ---
 
-## 9. Reasoning — **DEFERRED (design only, not built in Phase 3)**
+## 9. Reasoning — **BUILT in Phase 6.2, as a different scope than recorded here**
 
-Belongs to the `reasoning` module (Phase 6.2). Recorded deferred defaults for when it lands; **not built
-now:** **procedurally generated matrix reasoning** (abstract 3×3, rule-based missing cell; no SPM/APM
-content), **fixed 12-item graded set**, raw = number correct.
+Belongs to the `reasoning` module. This section originally recorded, as a deferred default,
+**procedurally generated matrix reasoning** — an abstract 3×3 grid, rule-based missing cell, a fixed
+12-item graded set, raw = number correct. **That instrument is not built.** Phase 6.2 was directed to
+implement a different, explicitly scoped set of tasks instead: **base-rate items in both probability
+and natural-frequency formats, a generate-multiple-hypotheses fluency drill, a "what would disconfirm
+this?" falsifiability prompt, and calibration training** (a confidence rating on two-choice factual
+questions, scored with a Brier score and a calibration curve).
+
+Matrix reasoning remains a recorded, un-built option for a future slice — nothing here rules it out —
+but it is not what Phase 6.2 shipped. This gets the same treatment §7 got when the PVT's recorded ISI
+turned out to belong to a different instrument: recorded and pointed at the real source rather than
+silently left to look current. **`src/modules/reasoning/SPEC.md` is the authority for what was actually
+built**, including why (§1 there) and the full paradigm/scoring detail (§2-§5).
+
+Binding numbers, recorded here so the doc/code drift guard
+([modules/reasoning/specSync.test.ts](../modules/reasoning/specSync.test.ts)) can watch them: base-rate
+10 items/run (5 percentage-format, 5 frequency-format), fixed population 1000; hypotheses 5 prompts/run,
+cap 8 entries/prompt; disconfirmation 6 claims/run; calibration 15 questions/run, confidence scale
+50/60/70/80/90/100. Raw scores: base-rate mean absolute error in percentage points (lower better),
+hypotheses mean unique entries per prompt (higher better), disconfirmation mean self-rated score 0/0.5/1
+(higher better), calibration Brier score (lower better). None of these four tasks are timed the way the
+attention tasks are.
 
 ---
 
@@ -308,6 +327,16 @@ raw = loglinear d′; **flicker** 500/80 ms alternation, 60 s timeout, 4 trials,
 time with misses imputed at the timeout. All are single constants in
 [engine/attention/timing.ts](../engine/attention/timing.ts), asserted against the docs by
 [modules/attention/specSync.test.ts](../modules/attention/specSync.test.ts).
+
+**Added 2026-07-31 (Phase 6.2).** Same reasoning: §9 was written deferred and carried no reasoning
+numbers. The instrument actually built there is a different scope than §9 recorded — see the
+rewritten §9 above. Binding numbers: **base-rate** 10 items/run (5 percentage-format, 5
+frequency-format), population 1000, raw = mean absolute error in percentage points (lower better);
+**hypotheses** 5 prompts/run, cap 8 entries/prompt, raw = mean unique entries per prompt (higher
+better); **disconfirmation** 6 claims/run, self-rated 0/0.5/1, raw = mean self-score (higher better);
+**calibration** 15 questions/run, confidence scale 50/60/70/80/90/100, raw = Brier score (lower
+better). All are single constants in `engine/reasoning/*.ts`, asserted against the docs by
+[modules/reasoning/specSync.test.ts](../modules/reasoning/specSync.test.ts).
 
 ### Tracked follow-ups (one migration, handled Phase-2 style: spec → plan → TDD → green commit)
 

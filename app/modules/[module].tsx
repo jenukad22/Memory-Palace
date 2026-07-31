@@ -1,36 +1,25 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { View } from 'react-native';
 import { AppText, Button, ScreenShell, space } from '@/ui';
 
-// Fallback for domains without their own screens yet (reasoning). Memory and
-// attention have static routes, which expo-router matches ahead of this dynamic
-// one. The modules hub doesn't link here, but a direct URL should still land on
-// a styled "not yet available" screen, never raw placeholder text.
-const TITLES: Record<string, string> = {
-  reasoning: 'Reasoning',
-};
-
+// Fallback for any domain key without its own screens — memory, attention and
+// reasoning all have static routes, which expo-router matches ahead of this
+// dynamic one, so this only renders for an unrecognized URL. The modules hub
+// never links here; a mistyped or stale URL should still land on a styled
+// screen, never raw placeholder text.
 export default function ModuleDetail() {
-  const { module } = useLocalSearchParams<{ module: string }>();
   const router = useRouter();
-  const title = TITLES[module ?? ''] ?? 'Module';
 
   return (
-    <ScreenShell kicker="Training" taskName={title}>
+    <ScreenShell kicker="Training" taskName="Module">
       <View style={{ gap: space.sp3, paddingTop: space.sp5 }}>
-        <AppText variant="heading">{title}</AppText>
+        <AppText variant="heading">Module not found</AppText>
         <AppText variant="secondary" color="textSecondary">
-          This module isn’t available yet — it arrives in a later phase. Memory and attention
-          training are ready to use now.
+          That training module doesn’t exist. Memory, Attention and Reasoning are all available from
+          the modules list.
         </AppText>
-        <View style={{ paddingTop: space.sp3, gap: space.sp2 }}>
-          <Button label="Open Memory" onPress={() => router.replace('/modules/memory')} />
-          <Button
-            kind="secondary"
-            label="Open Attention"
-            onPress={() => router.replace('/modules/attention')}
-          />
-          <Button kind="ghost" label="All modules" onPress={() => router.replace('/modules')} />
+        <View style={{ paddingTop: space.sp3 }}>
+          <Button label="All modules" onPress={() => router.replace('/modules')} />
         </View>
       </View>
     </ScreenShell>

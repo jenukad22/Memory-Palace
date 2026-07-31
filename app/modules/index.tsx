@@ -2,9 +2,8 @@ import { useRouter } from 'expo-router';
 import { View } from 'react-native';
 import { AppText, Button, Card, ComingSoonTag, ScreenShell, space } from '@/ui';
 
-// Training hub — one card per cognitive domain (/src/modules). Memory and
-// Attention are live; Reasoning is a later phase, shown as not-yet-available
-// rather than as a dead link to a placeholder screen.
+// Training hub — one card per cognitive domain (/src/modules). All three
+// domains are live.
 interface Domain {
   key: string;
   name: string;
@@ -29,7 +28,9 @@ const DOMAINS: readonly Domain[] = [
   {
     key: 'reasoning',
     name: 'Reasoning',
-    blurb: 'Pattern and relational reasoning tasks.',
+    blurb:
+      'Base-rate items in two formats, generate-multiple-hypotheses, disconfirmation, and calibration training.',
+    route: '/modules/reasoning',
   },
 ];
 
