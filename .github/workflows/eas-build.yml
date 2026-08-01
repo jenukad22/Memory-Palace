@@ -1,0 +1,52 @@
+name: EAS Build
+
+# Manual trigger only, not on push. EAS builds consume paid build minutes and
+# (for production) can be submitted to app store review — that's a real-world
+# action with cost and consequence, not something that should fire on every
+# push to main. Run it deliberately from the Actions tab.
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: 'eas.json build profile'
+        required: true
+        default: 'preview'
+        type: choice
+        options: [development, preview, production]
+      platform:
+        description: 'Target platform'
+        required: true
+        default: 'all'
+        type: choice
+        options: [ios, android, all]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # The gate that already protects main — a build profile is not a
+      # substitute for it, EAS will happily build broken code.
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Lint
+        run: npm run lint
+      - name: Test
+        run: npm test
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: EAS Build
+        run: eas build --platform ${{ inputs.platform }} --profile ${{ inputs.profile }} --non-interactive --no-wait

@@ -8,6 +8,19 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "platforms": ["ios", "android", "web"],
-    "plugins": ["expo-sqlite", "expo-router", "expo-status-bar", "expo-secure-store"]
+    "ios": {
+      "bundleIdentifier": "com.jenuka.memorypalace",
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.jenuka.memorypalace"
+    },
+    "plugins": ["expo-sqlite", "expo-router", "expo-status-bar", "expo-secure-store"],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "0d60f7d7-9b40-42b3-9786-a3f3985c6410"
+      }
+    }
   }
 }

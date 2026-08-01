@@ -15,6 +15,12 @@ expo-env.d.ts
 *.key
 *.mobileprovision
 
+# store submission credentials (Play Console service-account key, local EAS
+# credentials manifest) — never commit these, reference by path only
+credentials.json
+*-service-account.json
+google-play-*.json
+
 # Metro
 .metro-health-check*
 
