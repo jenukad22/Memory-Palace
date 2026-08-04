@@ -13,6 +13,7 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: [
+      'src/*.test.ts',
       'src/engine/**/*.test.ts',
       'src/db/**/*.test.ts',
       'src/ui/**/*.test.ts',
@@ -25,6 +26,7 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       include: [
+        'src/*.ts',
         'src/engine/**/*.ts',
         'src/db/**/*.ts',
         'src/ui/**/*.ts',
@@ -34,6 +36,7 @@ export default defineConfig({
         'src/sync/**/*.ts',
       ],
       exclude: [
+        'src/*.test.ts',
         'src/engine/**/*.test.ts',
         'src/db/**/*.test.ts',
         'src/ui/**/*.test.ts',

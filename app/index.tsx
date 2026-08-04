@@ -3,6 +3,7 @@ import { useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { doneSet, nextRoute } from '@/assessment/battery';
 import { getAbility, listAssessments, listDueCards, useDb, type AssessmentRow } from '@/db';
+import { isDevToolsEnabled } from '@/devTools';
 import { AppText, Button, Card, ScreenShell, space } from '@/ui';
 
 // Dashboard. Everything shown is task- or module-specific output — a span, a
@@ -70,7 +71,7 @@ export default function Dashboard() {
 
         <Button kind="ghost" label="Settings" onPress={() => router.push('/settings')} />
 
-        {__DEV__ ? (
+        {isDevToolsEnabled(__DEV__) ? (
           <Button kind="ghost" label="Developer tools" onPress={() => router.push('/dev')} />
         ) : null}
       </View>

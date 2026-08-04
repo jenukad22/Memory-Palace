@@ -59,9 +59,9 @@ write. Acceptable pre-sync; revisit when the sync engine lands.
 and every query function — via `npm test` (`src/db/**/*.test.ts`), plus `npm run typecheck` and
 `npm run lint`.
 
-**NOT verified until run on macOS / a browser (the driver is the risk surface).** The schema,
-migrations, and queries are shared across platforms, but these depend on the actual driver and stay
-unverified until exercised on-device:
+**NOT verified until run on a native device (either platform) / a browser (the driver is the
+risk surface).** The schema, migrations, and queries are shared across platforms, but these
+depend on the actual driver and stay unverified until exercised on-device:
 
 - **WAL journal-mode behavior** — `PRAGMA journal_mode = WAL` result and the `-wal` file (native only).
 - **expo-sqlite date/boolean coercion** — `timestamp_ms` ⇄ `Date` and `mode:'boolean'` ⇄ 0/1 under
@@ -71,9 +71,10 @@ unverified until exercised on-device:
 - **Web runtime** — sql.js wasm loading via Metro (`sql-wasm.wasm` asset) and IndexedDB
   persistence/flush. Blocked from `expo export` verification until an app entry exists.
 
-## iOS smoke-test checklist (run on a Mac / simulator)
+## Native device smoke-test checklist
 
-Wire a dev-only button to `runDbSelfTest(db)`, then confirm:
+The dev-tools screen (`app/dev.tsx`, gated by `isDevToolsEnabled` —
+[src/devTools.ts](../devTools.ts)) wires a button to `runDbSelfTest(db)`. Confirm:
 
 - [ ] App boots; `createDb()` resolves with no error.
 - [ ] Migrations run once (a second launch does not re-run them — check `_migrations`).
@@ -82,12 +83,23 @@ Wire a dev-only button to `runDbSelfTest(db)`, then confirm:
 - [ ] `PRAGMA journal_mode` reports `wal` on native; the web build never issues WAL.
 - [ ] Inserting a `review_log` row for a missing `card_id` fails (FK enforced) — same as web.
 
-### Dev-button wiring (add when an app shell exists)
+**Not iOS-specific — an Android build clears every item above.** Every check here is a
+property of `expo-sqlite`'s API surface and the SQLite engine it wraps (open a db,
+run PRAGMAs, run migrations, bind/coerce types, enforce a foreign key), not of anything
+platform-particular like Keychain, App Sandbox, or Info.plist. `expo-sqlite` ships one
+JS API with a separately-compiled native binding per platform, so running this checklist
+on Android is strong evidence the same code paths work on iOS — not a proof: a bug
+specific to one platform's binding (rather than the shared SQLite engine underneath)
+is the residual risk that stays open until the checklist is actually run on iOS too.
 
-```tsx
-import { createDb, runDbSelfTest } from '@/db';
-// const db = await createDb();
-// <Button title="DB self-test" onPress={() => console.log(runDbSelfTest(db))} />
-```
+This section was originally titled "iOS smoke-test checklist (run on a Mac / simulator)"
+because a Mac was what was available at the time it was written, not because these
+checks are iOS-only — retitled once an Android build was actually available to run
+them on.
 
-`App.tsx` does not exist yet, so this button lands in a later phase.
+**A genuinely iOS-vs-Android difference exists elsewhere, outside this checklist**:
+`CorsiBoard`'s lit-block glow renders via `shadowColor`/`shadowOpacity`, which iOS
+honors and Android (elevation-shadow only, always black) does not — noted already in
+that component's own comments. An Android run doesn't verify that visual; it's a
+rendering detail, not a data-correctness one, and isn't part of what this checklist
+covers.

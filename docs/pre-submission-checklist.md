@@ -100,10 +100,14 @@ device/simulator pass through the actual UI — not something to fabricate.
 ### 2.2 `eas.json`
 
 - `development` / `preview` / `production` build profiles present.
-- Removed a dead `EXPO_PUBLIC_ENABLE_DEV_TOOLS` env var from the `preview` profile —
-  grepped the codebase, it was never read anywhere; the dev-tools link
-  (`app/index.tsx`) is already gated by React Native's own `__DEV__`, which EAS sets
-  correctly per profile without help.
+- `EXPO_PUBLIC_ENABLE_DEV_TOOLS=1` set on the `preview` profile only, read by
+  [`src/devTools.ts`](../src/devTools.ts)'s `isDevToolsEnabled(__DEV__)` — true when
+  either that's set or the RN bundler's own `__DEV__` is true. `__DEV__` alone is false
+  in _every_ EAS build (dev, preview, and production all disable the dev client), so
+  without this the `/dev` route and its DB self-test button — the only way to exercise
+  the real `expo-sqlite` native driver before a store build — would be unreachable in
+  the installable preview APK. `production` deliberately does not set it: the self-test
+  writes real rows and has no place in what ships to a store.
 - `appVersionSource: "remote"` + `production.autoIncrement: true` — EAS manages
   iOS build numbers / Android version codes remotely; nothing to set by hand, and
   nothing in `app.json` conflicts with it.
