@@ -1,17 +1,21 @@
 name: Fix Lockfile (Linux)
 
-# Manual only. Regenerates package-lock.json from a fully clean install on
-# ubuntu-latest, so every platform-specific optional dependency's metadata is
-# computed by Linux npm rather than carried over from a Windows-generated
-# lockfile (npm/cli#4828 — see src/lockfile-consistency.test.ts for the
-# structural detail of what that class of corruption looks like and why it
-# breaks `npm ci` on a different platform than the one that wrote the lock).
+# Manual only.
 #
-# `rm -rf node_modules` before installing is the important part, not just
-# deleting the lockfile: an incremental `npm install` over an already-stale
-# node_modules can carry forward an orphaned nested package as an
-# "extraneous" lockfile entry, which is the exact mechanism that broke this
-# repo. Starting from nothing means there is nothing stale to carry forward.
+# STATUS: diagnostic, not yet a confirmed fix. The original theory here was
+# that the 27 "extraneous: true" entries under node_modules/vitest/node_modules/
+# @esbuild/* were stale Windows node_modules cruft (npm/cli#4828) that a clean
+# Linux install would eliminate. A real run of this workflow disproved that: a
+# from-zero `rm -rf node_modules package-lock.json && npm install` on
+# ubuntu-latest reproduced the exact same 27 entries byte-for-byte, and `npm
+# ci` (no flags) succeeded — while EAS's build uses `npm ci --include=dev` and
+# fails with EBADPLATFORM. So the lockfile content is not the variable; how
+# npm is invoked (and possibly which npm/node version) is. The steps below
+# print what's needed to pin that down before this workflow's commit/push
+# step is trusted to actually fix anything — see
+# src/lockfile-consistency.test.ts for why "no extraneous entries" turned out
+# to be the wrong invariant to gate on, kept for now as a candidate check
+# pending this investigation, not yet re-enabled in CI.
 on:
   workflow_dispatch: {}
 
@@ -25,9 +29,28 @@ jobs:
         with:
           ref: main
 
+      - name: Confirm which commit actually got checked out
+        run: |
+          echo "checked out SHA: $(git rev-parse HEAD)"
+          git log -1 --oneline
+
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+
+      - name: Print the node/npm versions this job's npm commands actually use
+        run: |
+          echo "node: $(node -v)"
+          echo "npm:  $(npm -v)"
+
+      - name: Count extraneous entries in the lockfile AS CHECKED OUT, before any install runs
+        run: |
+          node -e "
+          const lock = JSON.parse(require('fs').readFileSync('package-lock.json', 'utf8'));
+          const extraneous = Object.entries(lock.packages).filter(([, v]) => v.extraneous === true);
+          console.log('extraneous entries before install:', extraneous.length);
+          for (const [name] of extraneous) console.log('  -', name);
+          "
 
       - name: Remove node_modules and the lockfile for a truly clean resolve
         run: rm -rf node_modules package-lock.json
@@ -35,14 +58,31 @@ jobs:
       - name: Fresh npm install on Linux
         run: npm install
 
-      # `npm ci` is what EAS Build actually runs, and it is stricter than
-      # `npm install` about the lockfile matching package.json exactly — this
-      # is the step that would have caught the original break before it ever
-      # reached a build.
-      - name: Verify npm ci succeeds from the newly generated lockfile
+      - name: Count extraneous entries in the freshly regenerated lockfile
+        run: |
+          node -e "
+          const lock = JSON.parse(require('fs').readFileSync('package-lock.json', 'utf8'));
+          const extraneous = Object.entries(lock.packages).filter(([, v]) => v.extraneous === true);
+          console.log('extraneous entries after fresh install:', extraneous.length);
+          "
+
+      # Plain npm ci — what this workflow originally verified. Known from a
+      # prior run: this succeeds (916 packages).
+      - name: Verify plain npm ci succeeds from the newly generated lockfile
         run: |
           rm -rf node_modules
           npm ci
+
+      # EAS Build's actual invocation, reproduced exactly. If this fails here
+      # too, the difference is the flag itself (or something it changes about
+      # dev-dependency resolution), independent of npm/node version, and
+      # reproducible without EAS at all. If it PASSES here, the remaining
+      # variable is npm/node version — compare this step's printed versions
+      # against the EAS build log's "Install dependencies" banner.
+      - name: Reproduce EAS's exact command — npm ci --include=dev
+        run: |
+          rm -rf node_modules
+          npm ci --include=dev
 
       - name: Check whether the lockfile actually changed
         id: diff
@@ -64,13 +104,9 @@ jobs:
           Produced by .github/workflows/fix-lockfile.yml (workflow_dispatch): a
           clean rm -rf node_modules package-lock.json && npm install on
           ubuntu-latest, with npm ci verified to succeed from the result
-          before this commit. Fixes EBADPLATFORM-class failures where a
-          Windows-generated lockfile records a platform-specific optional
-          dependency's install metadata incorrectly (npm/cli#4828) — see
-          src/lockfile-consistency.test.ts for the structural check that
-          catches this going forward."
+          before this commit."
           git push origin HEAD:main
 
       - name: Report when nothing changed
         if: steps.diff.outputs.changed == 'false'
-        run: echo "npm ci already succeeds from the current lockfile — nothing to regenerate."
+        run: echo "Lockfile content is unchanged from a clean Linux install — the fix, if there is one, is not lockfile content. See the diagnostic steps above."
