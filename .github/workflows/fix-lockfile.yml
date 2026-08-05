@@ -28,8 +28,29 @@ name: Fix Lockfile (Linux)
 # See src/lockfile-consistency.test.ts for why "no extraneous entries" turned
 # out to be the wrong invariant to gate CI on — kept as a candidate pending
 # this investigation, not yet re-enabled.
+#
+# AUTO-COMMIT DISABLED BY DEFAULT. `npm install` (used deliberately here, to
+# force a full re-resolve) reruns dependency resolution against whatever is
+# currently published to the registry, not just what's already locked. Most
+# of this tree pins exact versions, but a few ranges are wide enough to cross
+# real boundaries between two dispatches run at different times — e.g.
+# react-native-reanimated depends on react-native-worklets via "0.10.x -
+# 0.11.x", which resolved to 0.10.3 on one run and 0.11.3 on a later one, and
+# landed on main un-reviewed (the exact failure this workflow's own commit
+# step caused: see the 2026-08-05 incident where a "fix-lockfile" dispatch
+# silently introduced a worklets version EAS's own npm ci then rejected as
+# lockfile-inconsistent). Every dispatch is therefore a genuinely new,
+# uncontrolled resolution — the workflow is not the bug, but landing its
+# output unattended is. Set `apply_and_push: true` to opt back into the old
+# behavior once a run's diagnostics have actually been read.
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      apply_and_push:
+        description: 'Commit and push the regenerated lockfile if it changed (leave off to just see the diagnostics)'
+        required: true
+        default: false
+        type: boolean
 
 jobs:
   regenerate:
@@ -108,20 +129,28 @@ jobs:
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Commit and push the regenerated lockfile
+      - name: Show what changed, if anything (always visible, even in dry-run)
         if: steps.diff.outputs.changed == 'true'
+        run: git diff -- package-lock.json
+
+      - name: Commit and push the regenerated lockfile
+        if: steps.diff.outputs.changed == 'true' && inputs.apply_and_push == true
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add package-lock.json
           git commit -m "chore: regenerate package-lock.json on Linux
 
-          Produced by .github/workflows/fix-lockfile.yml (workflow_dispatch): a
-          clean rm -rf node_modules package-lock.json && npm install on
-          ubuntu-latest, with npm ci verified to succeed from the result
-          before this commit."
+          Produced by .github/workflows/fix-lockfile.yml (workflow_dispatch,
+          apply_and_push=true): a clean rm -rf node_modules package-lock.json
+          && npm install on ubuntu-latest, with npm ci verified to succeed
+          from the result before this commit."
           git push origin HEAD:main
+
+      - name: Changed, but not applying (dry run)
+        if: steps.diff.outputs.changed == 'true' && inputs.apply_and_push == false
+        run: echo "Lockfile changed (diff above) but apply_and_push was left off, so nothing was committed. Read the diagnostics and the diff, then re-dispatch with apply_and_push=true if this is actually wanted."
 
       - name: Report when nothing changed
         if: steps.diff.outputs.changed == 'false'
-        run: echo "Lockfile content is unchanged from a clean Linux install — the fix, if there is one, is not lockfile content. See the diagnostic steps above."
+        run: echo "Lockfile content is unchanged from a clean Linux install."
