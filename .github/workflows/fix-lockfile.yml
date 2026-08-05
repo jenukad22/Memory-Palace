@@ -10,12 +10,24 @@ name: Fix Lockfile (Linux)
 # ubuntu-latest reproduced the exact same 27 entries byte-for-byte, and `npm
 # ci` (no flags) succeeded — while EAS's build uses `npm ci --include=dev` and
 # fails with EBADPLATFORM. So the lockfile content is not the variable; how
-# npm is invoked (and possibly which npm/node version) is. The steps below
-# print what's needed to pin that down before this workflow's commit/push
-# step is trusted to actually fix anything — see
-# src/lockfile-consistency.test.ts for why "no extraneous entries" turned out
-# to be the wrong invariant to gate on, kept for now as a candidate check
-# pending this investigation, not yet re-enabled in CI.
+# npm is invoked (and possibly which npm/node version) is.
+#
+# This job's own node-version was itself a confound until now: it ran Node 24
+# (npm 11.x), while EAS's SDK-57 Android image (docs.expo.dev/build-reference/
+# infrastructure, cross-checked against two independent fetches and against
+# `eas config`'s own accepted-value validation before eas.json was pinned to
+# it) runs Node 22.23.1 / npm 10.9.8 — a full major-version npm gap. Pinned
+# below to match exactly, and eas.json's preview.android.image is now pinned
+# to "ubuntu-26.04-jdk-17-ndk-r27b-sdk-57" so this comparison stays valid
+# instead of drifting with whatever `auto` resolves to that week. If
+# `npm ci --include=dev` still passes here at the matched version, the flag
+# is the trigger, independent of npm version, and the image pin doesn't fix
+# EAS's build — that would need chasing further. If it fails here too, the
+# npm-version theory is confirmed and the pin should be enough.
+#
+# See src/lockfile-consistency.test.ts for why "no extraneous entries" turned
+# out to be the wrong invariant to gate CI on — kept as a candidate pending
+# this investigation, not yet re-enabled.
 on:
   workflow_dispatch: {}
 
@@ -34,14 +46,17 @@ jobs:
           echo "checked out SHA: $(git rev-parse HEAD)"
           git log -1 --oneline
 
+      # Pinned to match EAS's SDK-57 Android image exactly (see header) —
+      # was 24 (npm 11.x); this comparison is meaningless unless the npm
+      # version matches what EAS actually runs.
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: '22.23.1'
 
       - name: Print the node/npm versions this job's npm commands actually use
         run: |
-          echo "node: $(node -v)"
-          echo "npm:  $(npm -v)"
+          echo "node: $(node -v)  (EAS SDK-57 image runs 22.23.1)"
+          echo "npm:  $(npm -v)  (EAS SDK-57 image runs 10.9.8)"
 
       - name: Count extraneous entries in the lockfile AS CHECKED OUT, before any install runs
         run: |
