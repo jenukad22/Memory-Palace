@@ -1,0 +1,76 @@
+name: Fix Lockfile (Linux)
+
+# Manual only. Regenerates package-lock.json from a fully clean install on
+# ubuntu-latest, so every platform-specific optional dependency's metadata is
+# computed by Linux npm rather than carried over from a Windows-generated
+# lockfile (npm/cli#4828 — see src/lockfile-consistency.test.ts for the
+# structural detail of what that class of corruption looks like and why it
+# breaks `npm ci` on a different platform than the one that wrote the lock).
+#
+# `rm -rf node_modules` before installing is the important part, not just
+# deleting the lockfile: an incremental `npm install` over an already-stale
+# node_modules can carry forward an orphaned nested package as an
+# "extraneous" lockfile entry, which is the exact mechanism that broke this
+# repo. Starting from nothing means there is nothing stale to carry forward.
+on:
+  workflow_dispatch: {}
+
+jobs:
+  regenerate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Remove node_modules and the lockfile for a truly clean resolve
+        run: rm -rf node_modules package-lock.json
+
+      - name: Fresh npm install on Linux
+        run: npm install
+
+      # `npm ci` is what EAS Build actually runs, and it is stricter than
+      # `npm install` about the lockfile matching package.json exactly — this
+      # is the step that would have caught the original break before it ever
+      # reached a build.
+      - name: Verify npm ci succeeds from the newly generated lockfile
+        run: |
+          rm -rf node_modules
+          npm ci
+
+      - name: Check whether the lockfile actually changed
+        id: diff
+        run: |
+          if git diff --quiet -- package-lock.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit and push the regenerated lockfile
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          git commit -m "chore: regenerate package-lock.json on Linux
+
+          Produced by .github/workflows/fix-lockfile.yml (workflow_dispatch): a
+          clean rm -rf node_modules package-lock.json && npm install on
+          ubuntu-latest, with npm ci verified to succeed from the result
+          before this commit. Fixes EBADPLATFORM-class failures where a
+          Windows-generated lockfile records a platform-specific optional
+          dependency's install metadata incorrectly (npm/cli#4828) — see
+          src/lockfile-consistency.test.ts for the structural check that
+          catches this going forward."
+          git push origin HEAD:main
+
+      - name: Report when nothing changed
+        if: steps.diff.outputs.changed == 'false'
+        run: echo "npm ci already succeeds from the current lockfile — nothing to regenerate."
