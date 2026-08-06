@@ -1,5 +1,5 @@
 import type { Session } from '@supabase/supabase-js';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { countPending, useDb } from '@/db';
@@ -30,6 +30,7 @@ type Status =
  */
 export function SyncSettingsScreen() {
   const db = useDb();
+  const router = useRouter();
   const configured = isSyncConfigured();
   const [session, setSession] = useState<Session | null>(null);
   const [email, setEmail] = useState('');
@@ -63,6 +64,7 @@ export function SyncSettingsScreen() {
             Everything you do is saved on this device, as always. Sync is optional — it only appears
             when the app is built with a Supabase project configured.
           </AppText>
+          <Button kind="ghost" label="Back" onPress={() => router.back()} />
         </View>
       </ScreenShell>
     );
@@ -190,6 +192,8 @@ export function SyncSettingsScreen() {
             {status.message}
           </AppText>
         ) : null}
+
+        <Button kind="ghost" label="Back" onPress={() => router.back()} />
       </View>
     </ScreenShell>
   );

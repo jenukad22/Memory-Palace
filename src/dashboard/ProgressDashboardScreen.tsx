@@ -32,7 +32,7 @@ import {
   REASONING_INSTRUMENTS,
   REASONING_MODULE,
 } from '@/modules/reasoning';
-import { AppText, Card, ScreenShell, space } from '@/ui';
+import { AppText, Button, Card, ScreenShell, space } from '@/ui';
 import { ModuleProgressSection, type ModuleProgressData } from './ModuleProgressSection';
 
 const STREAK_WINDOW_DAYS = 30;
@@ -235,6 +235,8 @@ export function ProgressDashboardScreen() {
             onRetake={(route) => router.push(route)}
           />
         ) : null}
+
+        <Button kind="ghost" label="Back" onPress={() => router.back()} />
       </View>
     </ScreenShell>
   );
