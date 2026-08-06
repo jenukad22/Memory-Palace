@@ -6,6 +6,50 @@ on:
   pull_request:
 
 jobs:
+  # Reproduces EAS Build's dependency install exactly, on every push, so a
+  # lockfile that cannot install on Linux fails here in ~1 minute instead of 15
+  # minutes into a remote build. Three separate lockfile defects have reached
+  # EAS this way (EBADPLATFORM on @esbuild/aix-ppc64; a react-native-worklets
+  # 0.10.3/0.11.3 split; a dropped vitest/esbuild subtree reported as "Missing
+  # from lock file") — all three were invisible to `npm ci` as this repo's
+  # other job runs it.
+  #
+  # Two details are load-bearing and must stay matched to eas.json's pinned
+  # preview image (ubuntu-26.04-jdk-17-ndk-r27b-sdk-57):
+  #   - node 22.23.1 / npm 10.9.8. npm 11 and npm 10 build different ideal
+  #     trees for optional peer dependencies, which is precisely how the last
+  #     failure got written on Windows and passed local checks.
+  #   - --include=dev, EAS's own flag. Plain `npm ci` succeeded on the lockfile
+  #     that EAS rejected.
+  # No cache: npm here — a warm cache can mask a lockfile that would fail to
+  # resolve from a cold registry, which is the situation EAS is always in.
+  eas-install-parity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.23.1'
+
+      - name: Print the versions this job actually runs
+        run: |
+          echo "node: $(node -v)  (EAS SDK-57 image runs v22.23.1)"
+          echo "npm:  $(npm -v)  (EAS SDK-57 image runs 10.9.8)"
+
+      - name: Install exactly as EAS Build does
+        run: npm ci --include=dev
+
+      # `npm ls --all` reports the same defect one step earlier (ELSPROBLEMS
+      # "invalid") but is not used as a gate: it exits non-zero for benign
+      # reasons too, including optional platform packages legitimately skipped
+      # for the current OS, so it would fail pushes that are actually fine.
+      # The precise, verified check for that condition is the peer-satisfaction
+      # assertion in src/lockfile-consistency.test.ts, which runs in `checks`.
+      - name: Tree report (informational — never fails the build)
+        if: always()
+        run: npm ls --all || true
+
   checks:
     runs-on: ubuntu-latest
     steps:
