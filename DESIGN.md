@@ -182,7 +182,29 @@ never guilt-tripped** and no copy implies anything beyond the task (CLAUDE.md ho
 
 Safe-area wrapper, `bg0` ground, horizontal padding `sp4`, top gap `sp3` under the header. Hosts
 the chrome header: `overline` kicker left ("Baseline · 2 of 3"), `caption` task name right,
-`BatteryProgress` beneath.
+`BatteryProgress` beneath. The chrome header is pinned; only the body moves.
+
+**Scrolling.** The body is a scroll container by default — a phone viewport is shorter than several
+of our screens, and content below the fold with no way to reach it is a correctness bug, not a
+cosmetic one. Its content uses `flexGrow: 1`, so a screen that fits lays out exactly as a plain
+flex column (children with `flex: 1` still stretch, nothing scrolls) and one that doesn't grows and
+scrolls. `scroll={false}` is only for a surface that measures itself against the box it is given —
+Corsi board, flicker grid, response pad — because a scroll container hands its children unbounded
+height. Every opt-out is registered with its reason in `screenScrollAudit.test.ts`.
+
+**Safe area.** Android draws edge-to-edge: the status bar and the gesture bar are over the app, not
+beside it. The ground reserves the top inset (skipped when a native header has already cleared it)
+and adds the horizontal insets to the `sp4` gutter; the body reserves the bottom inset, plus a
+resting gap when scrolling so the last control clears the gesture bar. The maths is
+`screenLayout.ts`, framework-free and unit-tested.
+
+### 2.11 Navigation chrome (`navigationTheme.ts`)
+
+The stack navigator's own header, styled from the tokens and applied once per navigator via
+`screenOptions` — never per screen. `bg0` header and transition ground, `accent` back arrow (the
+only interactive element up there), `textPrimary` title at `heading` size/weight, no shadow or
+elevation (prohibition 1), back arrow with no trailing label. Titles are supplied per route by the
+layout; anything unlisted is humanized from its route name, so a header can never read `index`.
 
 ---
 

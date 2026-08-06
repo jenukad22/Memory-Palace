@@ -109,7 +109,10 @@ export function FreeRecallScreen({ words, instrument, onDone }: FreeRecallScreen
 
   if (phase === 'recall') {
     return (
-      <ScreenShell kicker="Recall" taskName="Word list">
+      // The entered-words list is its own scroll region between a pinned input
+      // and a pinned Finish button, so the shell hands it a bounded box rather
+      // than scrolling the whole page.
+      <ScreenShell kicker="Recall" taskName="Word list" scroll={false}>
         <View style={{ gap: space.sp3, paddingTop: space.sp4, flex: 1 }}>
           <AppText variant="secondary" color="textSecondary">
             Type every word you remember, in any order — one at a time.

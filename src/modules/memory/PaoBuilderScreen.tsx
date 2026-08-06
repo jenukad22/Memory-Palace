@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 import { listPaoEntries, paoStatus, upsertPaoEntry, useDb } from '@/db';
 import { PAO_MAX, PAO_MIN, pad2, type PaoEntry } from '@/engine';
 import { AppText, Button, Card, InputField, ScreenShell, color, space } from '@/ui';
@@ -51,7 +51,7 @@ export function PaoBuilderScreen() {
 
   return (
     <ScreenShell kicker="Memory · PAO" taskName="Builder">
-      <ScrollView contentContainerStyle={{ gap: space.sp4, paddingVertical: space.sp4 }}>
+      <View style={{ gap: space.sp4 }}>
         <View style={{ gap: space.sp2 }}>
           <AppText variant="heading">Your 00–99 list</AppText>
           <AppText variant="secondary" color="textSecondary">
@@ -114,7 +114,7 @@ export function PaoBuilderScreen() {
               : `${status.missing.length} still to author.`}
           </AppText>
         </View>
-      </ScrollView>
+      </View>
     </ScreenShell>
   );
 }

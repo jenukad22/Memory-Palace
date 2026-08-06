@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 import {
   addLocus,
   createPalace,
@@ -79,7 +79,7 @@ export function PalaceBuilderScreen() {
   if (!selected) {
     return (
       <ScreenShell kicker="Memory · Palace" taskName="Builder">
-        <ScrollView contentContainerStyle={{ gap: space.sp4, paddingVertical: space.sp4 }}>
+        <View style={{ gap: space.sp4 }}>
           <AppText variant="heading">Your palaces</AppText>
           <AppText variant="secondary" color="textSecondary">
             A palace is a familiar route. Add stops (loci) in the order you walk them, then place
@@ -118,14 +118,14 @@ export function PalaceBuilderScreen() {
             />
             <Button label="Create palace" onPress={onCreatePalace} disabled={!palaceName.trim()} />
           </View>
-        </ScrollView>
+        </View>
       </ScreenShell>
     );
   }
 
   return (
     <ScreenShell kicker="Memory · Palace" taskName={selected.name}>
-      <ScrollView contentContainerStyle={{ gap: space.sp3, paddingVertical: space.sp4 }}>
+      <View style={{ gap: space.sp3 }}>
         <View
           style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
         >
@@ -190,7 +190,7 @@ export function PalaceBuilderScreen() {
             </AppText>
           ) : null}
         </View>
-      </ScrollView>
+      </View>
     </ScreenShell>
   );
 }

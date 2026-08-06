@@ -160,6 +160,11 @@ export function CorsiScreen({ mode = 'onboarding' }: CorsiScreenProps = {}) {
       kicker={mode === 'onboarding' ? 'Baseline · 3 of 3' : 'Baseline retake'}
       taskName="Corsi blocks"
       fills={fills}
+      // The board sizes itself to the leftover box (corsiLayout.ts); inside a
+      // scroll container that box is unbounded and the lower blocks would end
+      // up off-screen and untappable, corrupting the recorded span. The intro
+      // is ordinary copy and scrolls.
+      scroll={phase === 'intro'}
     >
       {phase === 'intro' ? (
         <View style={{ gap: space.sp3, paddingTop: space.sp5 }}>

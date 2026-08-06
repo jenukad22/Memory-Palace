@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 import { useDb } from '@/db';
 import {
   HYPOTHESES_PROMPTS_PER_RUN,
@@ -112,7 +112,7 @@ export function HypothesesScreen() {
 
   return (
     <ScreenShell kicker="Reasoning" taskName="Hypotheses">
-      <ScrollView contentContainerStyle={{ gap: space.sp4, paddingVertical: space.sp4 }}>
+      <View style={{ gap: space.sp4 }}>
         <AppText variant="caption" color="textMuted">
           Prompt {index + 1} of {prompts.length}
         </AppText>
@@ -159,7 +159,7 @@ export function HypothesesScreen() {
           label={index + 1 < prompts.length ? 'Next prompt' : 'Finish'}
           onPress={nextPrompt}
         />
-      </ScrollView>
+      </View>
     </ScreenShell>
   );
 }
@@ -175,7 +175,7 @@ function HypothesesResults({
 }) {
   return (
     <ScreenShell kicker="Reasoning" taskName="Hypotheses">
-      <ScrollView contentContainerStyle={{ gap: space.sp4, paddingVertical: space.sp4 }}>
+      <View style={{ gap: space.sp4 }}>
         <AppText variant="title">This run</AppText>
         <Card>
           <AppText variant="overline" color="textSecondary">
@@ -206,7 +206,7 @@ function HypothesesResults({
           </AppText>
         ) : null}
         <Button label="Done" onPress={onDone} />
-      </ScrollView>
+      </View>
     </ScreenShell>
   );
 }

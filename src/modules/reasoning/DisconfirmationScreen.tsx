@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 import { useDb } from '@/db';
 import {
   DISCONFIRMATION_PROMPTS_PER_RUN,
@@ -135,7 +135,7 @@ export function DisconfirmationScreen() {
 
   return (
     <ScreenShell kicker="Reasoning" taskName="Disconfirmation">
-      <ScrollView contentContainerStyle={{ gap: space.sp4, paddingVertical: space.sp4 }}>
+      <View style={{ gap: space.sp4 }}>
         <AppText variant="caption" color="textMuted">
           Claim {index + 1} of {claims.length}
         </AppText>
@@ -188,7 +188,7 @@ export function DisconfirmationScreen() {
             />
           </View>
         )}
-      </ScrollView>
+      </View>
     </ScreenShell>
   );
 }
@@ -204,7 +204,7 @@ function DisconfirmationResults({
 }) {
   return (
     <ScreenShell kicker="Reasoning" taskName="Disconfirmation">
-      <ScrollView contentContainerStyle={{ gap: space.sp4, paddingVertical: space.sp4 }}>
+      <View style={{ gap: space.sp4 }}>
         <AppText variant="title">This run</AppText>
         <Card>
           <AppText variant="overline" color="textSecondary">
@@ -230,7 +230,7 @@ function DisconfirmationResults({
           </AppText>
         ) : null}
         <Button label="Done" onPress={onDone} />
-      </ScrollView>
+      </View>
     </ScreenShell>
   );
 }

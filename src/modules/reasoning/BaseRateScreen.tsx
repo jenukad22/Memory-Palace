@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 import { useDb } from '@/db';
 import {
   BASE_RATE_ITEMS_PER_RUN,
@@ -112,7 +112,7 @@ export function BaseRateScreen() {
 
   return (
     <ScreenShell kicker="Reasoning" taskName="Base rates">
-      <ScrollView contentContainerStyle={{ gap: space.sp4, paddingVertical: space.sp4 }}>
+      <View style={{ gap: space.sp4 }}>
         <AppText variant="caption" color="textMuted">
           Item {index + 1} of {items.length}
         </AppText>
@@ -135,7 +135,7 @@ export function BaseRateScreen() {
           onPress={submit}
           disabled={!hasValidAnswer}
         />
-      </ScrollView>
+      </View>
     </ScreenShell>
   );
 }
@@ -151,7 +151,7 @@ function BaseRateResults({
 }) {
   return (
     <ScreenShell kicker="Reasoning" taskName="Base rates">
-      <ScrollView contentContainerStyle={{ gap: space.sp4, paddingVertical: space.sp4 }}>
+      <View style={{ gap: space.sp4 }}>
         <AppText variant="title">This run</AppText>
         <Card>
           <AppText variant="overline" color="textSecondary">
@@ -183,7 +183,7 @@ function BaseRateResults({
           </AppText>
         ) : null}
         <Button label="Done" onPress={onDone} />
-      </ScrollView>
+      </View>
     </ScreenShell>
   );
 }

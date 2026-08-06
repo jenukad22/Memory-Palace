@@ -1,7 +1,7 @@
 import type { Session } from '@supabase/supabase-js';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 import { countPending, useDb } from '@/db';
 import { AppText, Button, Card, InputField, ScreenShell, space } from '@/ui';
 import {
@@ -110,7 +110,7 @@ export function SyncSettingsScreen() {
 
   return (
     <ScreenShell kicker="Settings" taskName="Sync">
-      <ScrollView contentContainerStyle={{ gap: space.sp4, paddingVertical: space.sp4 }}>
+      <View style={{ gap: space.sp4 }}>
         <AppText variant="title">Sync</AppText>
 
         <Card>
@@ -190,7 +190,7 @@ export function SyncSettingsScreen() {
             {status.message}
           </AppText>
         ) : null}
-      </ScrollView>
+      </View>
     </ScreenShell>
   );
 }

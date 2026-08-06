@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 import { useDb } from '@/db';
 import {
   CPT_DISTRACTOR_LETTER,
@@ -180,7 +180,9 @@ export function CptScreen() {
   }
 
   return (
-    <ScreenShell kicker="Attention" taskName="CPT">
+    // The running phase is a flex:1 response pad measured against the box it is
+    // given; only the intro reads as a page and scrolls.
+    <ScreenShell kicker="Attention" taskName="CPT" scroll={phase === 'intro'}>
       {phase === 'intro' ? (
         <View style={{ gap: space.sp3, paddingTop: space.sp5 }}>
           <AppText variant="heading">Respond to every letter but one</AppText>
@@ -275,7 +277,7 @@ function CptResults({
 
   return (
     <ScreenShell kicker="Attention" taskName="CPT">
-      <ScrollView contentContainerStyle={{ gap: space.sp4, paddingVertical: space.sp4 }}>
+      <View style={{ gap: space.sp4 }}>
         <AppText variant="title">This run</AppText>
         <StatList title={`CPT · ${metrics.trials} letters`} stats={stats} footnote={CPT_HONESTY} />
         <TimingReport profile={profile} />
@@ -285,7 +287,7 @@ function CptResults({
           </AppText>
         ) : null}
         <Button label="Done" onPress={onDone} />
-      </ScrollView>
+      </View>
     </ScreenShell>
   );
 }

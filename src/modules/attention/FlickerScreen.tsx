@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 import { useDb } from '@/db';
 import {
   FLICKER_BLANK_MS,
@@ -238,7 +238,9 @@ export function FlickerScreen() {
     spec === null || frame === 'blank' ? null : frame === 'base' ? spec.base : spec.alternate;
 
   return (
-    <ScreenShell kicker="Attention" taskName="Flicker">
+    // The board sizes itself against the leftover box (boardLayout.ts), so it
+    // must not be handed a scroll container's unbounded height.
+    <ScreenShell kicker="Attention" taskName="Flicker" scroll={false}>
       <View style={{ flex: 1, paddingVertical: space.sp3, gap: space.sp3 }}>
         <AppText variant="caption" color="textMuted" style={{ textAlign: 'center' }}>
           Pattern {trialIndex + 1} of {FLICKER_TRIALS} · tap the element that changes
@@ -292,7 +294,7 @@ function FlickerResults({
 
   return (
     <ScreenShell kicker="Attention" taskName="Flicker">
-      <ScrollView contentContainerStyle={{ gap: space.sp4, paddingVertical: space.sp4 }}>
+      <View style={{ gap: space.sp4 }}>
         <AppText variant="title">This run</AppText>
         <StatList title="Flicker" stats={stats} footnote={FLICKER_HONESTY} />
         <TimingReport profile={profile} />
@@ -302,7 +304,7 @@ function FlickerResults({
           </AppText>
         ) : null}
         <Button label="Done" onPress={onDone} />
-      </ScrollView>
+      </View>
     </ScreenShell>
   );
 }

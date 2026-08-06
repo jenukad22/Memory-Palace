@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 import { useDb } from '@/db';
 import {
   CALIBRATION_ITEMS_PER_RUN,
@@ -143,7 +143,7 @@ export function CalibrationScreen() {
 
   return (
     <ScreenShell kicker="Reasoning" taskName="Calibration">
-      <ScrollView contentContainerStyle={{ gap: space.sp4, paddingVertical: space.sp4 }}>
+      <View style={{ gap: space.sp4 }}>
         <AppText variant="caption" color="textMuted">
           Question {index + 1} of {run.length}
         </AppText>
@@ -180,7 +180,7 @@ export function CalibrationScreen() {
             />
           </View>
         )}
-      </ScrollView>
+      </View>
     </ScreenShell>
   );
 }
@@ -198,7 +198,7 @@ function CalibrationResults({
 }) {
   return (
     <ScreenShell kicker="Reasoning" taskName="Calibration">
-      <ScrollView contentContainerStyle={{ gap: space.sp4, paddingVertical: space.sp4 }}>
+      <View style={{ gap: space.sp4 }}>
         <AppText variant="title">This run</AppText>
 
         <Card>
@@ -251,7 +251,7 @@ function CalibrationResults({
           </AppText>
         ) : null}
         <Button label="Done" onPress={onDone} />
-      </ScrollView>
+      </View>
     </ScreenShell>
   );
 }

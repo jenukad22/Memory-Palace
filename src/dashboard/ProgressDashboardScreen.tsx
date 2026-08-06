@@ -1,6 +1,6 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ScrollView } from 'react-native';
+import { View } from 'react-native';
 import { BASELINE_TASKS } from '@/assessment/battery';
 import {
   listAbilityHistory,
@@ -199,7 +199,7 @@ export function ProgressDashboardScreen() {
 
   return (
     <ScreenShell kicker="Progress" taskName="Dashboard">
-      <ScrollView contentContainerStyle={{ gap: space.sp4, paddingVertical: space.sp4 }}>
+      <View style={{ gap: space.sp4 }}>
         <AppText variant="title">Progress</AppText>
 
         <Card>
@@ -235,7 +235,7 @@ export function ProgressDashboardScreen() {
             onRetake={(route) => router.push(route)}
           />
         ) : null}
-      </ScrollView>
+      </View>
     </ScreenShell>
   );
 }
